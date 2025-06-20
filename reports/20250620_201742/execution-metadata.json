@@ -1,0 +1,31 @@
+{
+  "environment": "stage",
+  "userRole": "b2c",
+  "startTime": "2025-06-20T20:17:42.379Z",
+  "endTime": "2025-06-20T20:19:57.991Z",
+  "duration": 135,
+  "runNumber": "8",
+  "runId": "15787090122",
+  "sha": "c45ab6d9f02e1779a4467e9946a8c6738a10cd34",
+  "ref": "refs/heads/master",
+  "actor": "cadumega",
+  "timestamp": "20250620_201742",
+  "failedTestsDetails": [
+  {
+    "name": "Wishlist",
+    "fullName": "wishlist.spec.js:3:5",
+    "status": "failed",
+    "errorMessage": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('Welcome Shalaka')",
+    "stackTrace": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('Welcome Shalaka')\n\n    at /home/runner/work/PlaywrightCIGithubPages/PlaywrightCIGithubPages/tests/wishlist.spec.js:13:45",
+    "testFile": "wishlist.spec.js"
+  },
+  {
+    "name": "test",
+    "fullName": "loginfail.spec.js:3:5",
+    "status": "failed",
+    "errorMessage": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('textbox', { name: 'x' })",
+    "stackTrace": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('textbox', { name: 'x' })\n\n    at /home/runner/work/PlaywrightCIGithubPages/PlaywrightCIGithubPages/tests/loginfail.spec.js:8:50",
+    "testFile": "loginfail.spec.js"
+  }
+]
+}
