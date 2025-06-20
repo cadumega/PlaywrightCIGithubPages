@@ -1,6 +1,92 @@
 {
   "reports": [
     {
+      "id": "20250620_021449",
+      "timestamp": "20250620 021449",
+      "dateFormatted": "2025-06-20T02:14:49Z",
+      "status": "failure",
+      "runNumber": "6",
+      "runId": "15769733465",
+      "path": "reports/20250620_021449/",
+      "testSummary": {
+        "reportName": "Allure Report",
+        "testRuns": [],
+        "statistic": {
+          "failed": 2,
+          "broken": 0,
+          "skipped": 0,
+          "passed": 1,
+          "unknown": 0,
+          "total": 3
+        },
+        "time": {
+          "start": 1750385715307,
+          "stop": 1750385794268,
+          "duration": 78961,
+          "minDuration": 6328,
+          "maxDuration": 36695,
+          "sumDuration": 78134
+        }
+      },
+      "environment": "stage",
+      "userRole": "b2c",
+      "executionMetadata": {
+        "environment": "stage",
+        "userRole": "b2c",
+        "startTime": "2025-06-20T02:14:49.953Z",
+        "endTime": "2025-06-20T02:16:34.455Z",
+        "duration": 105,
+        "runNumber": "6",
+        "runId": "15769733465",
+        "sha": "c45ab6d9f02e1779a4467e9946a8c6738a10cd34",
+        "ref": "refs/heads/master",
+        "actor": "cadumega",
+        "timestamp": "20250620_021449",
+        "branch": "master",
+        "eventName": "push",
+        "workflowName": "Playwright Tests with Allure Report",
+        "failedTestsDetails": [
+          {
+            "name": "test",
+            "fullName": "loginfail.spec.js:3:5",
+            "status": "failed",
+            "errorMessage": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('textbox', { name: 'x' })",
+            "stackTrace": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('textbox', { name: 'x' })\n\n    at /home/runner/work/PlaywrightCIGithubPages/PlaywrightCIGithubPages/tests/loginfail.spec.js:8:50",
+            "testFile": "loginfail.spec.js"
+          },
+          {
+            "name": "Wishlist",
+            "fullName": "wishlist.spec.js:3:5",
+            "status": "failed",
+            "errorMessage": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('Welcome Shalaka')",
+            "stackTrace": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('Welcome Shalaka')\n\n    at /home/runner/work/PlaywrightCIGithubPages/PlaywrightCIGithubPages/tests/wishlist.spec.js:13:45",
+            "testFile": "wishlist.spec.js"
+          }
+        ]
+      },
+      "startTime": "2025-06-20T02:14:49.953Z",
+      "endTime": "2025-06-20T02:16:34.455Z",
+      "duration": "105",
+      "failedTestsDetails": [
+        {
+          "name": "test",
+          "fullName": "loginfail.spec.js:3:5",
+          "status": "failed",
+          "errorMessage": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('textbox', { name: 'x' })",
+          "stackTrace": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('textbox', { name: 'x' })\n\n    at /home/runner/work/PlaywrightCIGithubPages/PlaywrightCIGithubPages/tests/loginfail.spec.js:8:50",
+          "testFile": "loginfail.spec.js"
+        },
+        {
+          "name": "Wishlist",
+          "fullName": "wishlist.spec.js:3:5",
+          "status": "failed",
+          "errorMessage": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('Welcome Shalaka')",
+          "stackTrace": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('Welcome Shalaka')\n\n    at /home/runner/work/PlaywrightCIGithubPages/PlaywrightCIGithubPages/tests/wishlist.spec.js:13:45",
+          "testFile": "wishlist.spec.js"
+        }
+      ]
+    },
+    {
       "id": "20250620_020246",
       "timestamp": "20250620 020246",
       "dateFormatted": "2025-06-20T02:02:46Z",

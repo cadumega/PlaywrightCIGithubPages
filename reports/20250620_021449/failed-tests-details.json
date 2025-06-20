@@ -1,0 +1,18 @@
+[
+  {
+    "name": "test",
+    "fullName": "loginfail.spec.js:3:5",
+    "status": "failed",
+    "errorMessage": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('textbox', { name: 'x' })",
+    "stackTrace": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('textbox', { name: 'x' })\n\n    at /home/runner/work/PlaywrightCIGithubPages/PlaywrightCIGithubPages/tests/loginfail.spec.js:8:50",
+    "testFile": "loginfail.spec.js"
+  },
+  {
+    "name": "Wishlist",
+    "fullName": "wishlist.spec.js:3:5",
+    "status": "failed",
+    "errorMessage": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('Welcome Shalaka')",
+    "stackTrace": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('Welcome Shalaka')\n\n    at /home/runner/work/PlaywrightCIGithubPages/PlaywrightCIGithubPages/tests/wishlist.spec.js:13:45",
+    "testFile": "wishlist.spec.js"
+  }
+]
