@@ -1,0 +1,56 @@
+{
+  "reports": [
+    {
+      "id": "20250620_015630",
+      "timestamp": "20250620 015630",
+      "dateFormatted": "2025-06-20T01:56:30Z",
+      "status": "success",
+      "runNumber": "3",
+      "runId": "15769528708",
+      "path": "reports/20250620_015630/",
+      "testSummary": {
+        "reportName": "Allure Report",
+        "testRuns": [],
+        "statistic": {
+          "failed": 0,
+          "broken": 0,
+          "skipped": 0,
+          "passed": 1,
+          "unknown": 0,
+          "total": 1
+        },
+        "time": {
+          "start": 1750384616765,
+          "stop": 1750384628541,
+          "duration": 11776,
+          "minDuration": 11776,
+          "maxDuration": 11776,
+          "sumDuration": 11776
+        }
+      },
+      "environment": "dev",
+      "userRole": "b2c",
+      "executionMetadata": {
+        "environment": "dev",
+        "userRole": "b2c",
+        "startTime": "2025-06-20T01:56:30.955Z",
+        "endTime": "2025-06-20T01:57:09.414Z",
+        "duration": 39,
+        "runNumber": "3",
+        "runId": "15769528708",
+        "sha": "32f002a80778966aa3356ea0746c372d287da0d6",
+        "ref": "refs/heads/master",
+        "actor": "cadumega",
+        "timestamp": "20250620_015630",
+        "branch": "master",
+        "eventName": "workflow_dispatch",
+        "workflowName": "Playwright Tests with Allure Report",
+        "failedTestsDetails": []
+      },
+      "startTime": "2025-06-20T01:56:30.955Z",
+      "endTime": "2025-06-20T01:57:09.414Z",
+      "duration": "39",
+      "failedTestsDetails": []
+    }
+  ]
+}

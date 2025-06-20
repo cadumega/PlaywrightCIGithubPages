@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎭 Playwright Test Reports Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Base styles - Largely kept from previous iterations but adjusted for Cypress feel */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            /* Cypress-like background: darker, subtle gradient */
+            background: #2a2e37;
+            /* Dark charcoal */
+            color: #e0e0e0;
+            /* Light gray text for contrast */
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            /* No specific background, body handles it */
+        }
+
+        .header {
+            text-align: center;
+            color: #ffffff;
+            /* White text for header */
+            margin-bottom: 20px;
+            /* Reduced margin */
+            /* Cypress-like header: light blur on dark background */
+            background: rgba(42, 46, 55, 0.6);
+            /* Slightly transparent dark charcoal */
+            backdrop-filter: blur(5px);
+            padding: 20px;
+            border-radius: 10px;
+            /* Slightly less rounded than before */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            /* Softer shadow */
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            /* Reduced font size */
+            margin-bottom: 5px;
+            /* Reduced margin */
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            /* Reduced font size for tagline */
+        }
+
+        /* Stats Section */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            /* Min width adjusted */
+            gap: 15px;
+            /* Reduced gap */
+            margin-bottom: 25px;
+            /* Reduced margin */
+        }
+
+        .stat-card {
+            /* Cypress card background: lighter gray/white on dark bg */
+            background: #373c47;
+            /* Darker gray for cards */
+            padding: 15px;
+            /* Reduced padding */
+            border-radius: 8px;
+            /* Softer rounded corners */
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            /* Subtler shadow */
+            transition: transform 0.2s ease, background 0.2s ease;
+            color: #f0f0f0;
+            /* Light text for stats */
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            background: #424754;
+            /* Slightly lighter on hover */
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            /* Reduced font size */
+            font-weight: bold;
+            margin-bottom: 3px;
+            /* Reduced margin */
+            color: #7958d6;
+            /* Cypress purple for numbers */
+        }
+
+        .stat-label {
+            color: #b0b0b0;
+            /* Lighter gray for labels */
+            font-size: 0.85rem;
+            /* Reduced font size */
+        }
+
+        /* Controls/Filters */
+        .controls {
+            background: #373c47;
+            /* Darker gray for controls */
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box,
+        .filter-select {
+            padding: 10px 15px;
+            border: 1px solid #5a5e6b;
+            /* Lighter border for inputs */
+            border-radius: 6px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s ease, background 0.2s ease;
+            background-color: #424754;
+            /* Darker input background */
+            color: #f0f0f0;
+            /* Light text color */
+            appearance: none;
+            /* Remove default select arrow */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%23b0b0b0" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+            /* Custom arrow */
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 18px;
+            padding-right: 30px;
+            /* Space for custom arrow */
+        }
+
+        .search-box:focus,
+        .filter-select:focus {
+            border-color: #7958d6;
+            /* Cypress purple on focus */
+            background-color: #4c515f;
+            /* Slightly lighter on focus */
+        }
+
+        /* Options within select to ensure dark background */
+        .filter-select option {
+            background-color: #373c47;
+            color: #f0f0f0;
+        }
+
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        /* Reports Grid and Cards */
+        .reports-grid {
+            display: grid;
+            gap: 30px;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        }
+
+        .report-card {
+            background: #373c47;
+            /* Darker gray for report cards */
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+            border-left: 5px solid #5a5e6b;
+            /* Default border color */
+            color: #f0f0f0;
+            /* Light text for report cards */
+            font-size: 0.95rem;
+        }
+
+        .report-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            background: #424754;
+            /* Slightly lighter on hover */
+        }
+
+        /* Status-based left borders */
+        .report-card.latest {
+            border-left-color: #6a4cd7;
+            /* Cypress purple for latest */
+            background: linear-gradient(135deg, #3f4452 0%, #373c47 100%);
+            /* Subtle gradient for latest */
+        }
+
+        .report-card.success {
+            border-left-color: #4CAF50;
+            /* Green */
+        }
+
+        .report-card.failure {
+            border-left-color: #e91e63;
+            /* Cypress pink for failure */
+        }
+
+        .report-card.broken {
+            border-left-color: #FF9800;
+            /* Orange */
+        }
+
+        .status-badge.unknown {
+            background: #9E9E9E;
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .report-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ffffff;
+            /* White title text */
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .run-number-badge {
+            background: linear-gradient(135deg, #7958d6 0%, #6a4cd7 100%);
+            /* Cypress purple gradient */
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-badge {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .status-badge.success {
+            background: #4CAF50;
+        }
+
+        .status-badge.failure {
+            background: #e91e63;
+            /* Cypress pink for badge */
+        }
+
+        .status-badge.unknown {
+            background: #9E9E9E;
+        }
+
+        .status-badge.broken {
+            background: #FF9800;
+        }
+
+        .report-meta {
+            color: #b0b0b0;
+            /* Lighter gray for meta */
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+
+        /* NEW STYLES FOR ENV AND USER ROLE */
+        .badge-container {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+            flex-wrap: wrap;
+        }
+
+        .env-badge,
+        .role-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Environment badges - adjusted for dark background */
+        .env-badge.dev {
+            background: #6200EE;
+            /* Deep Purple */
+            color: #E1BEE7;
+            border: 1px solid #7E57C2;
+        }
+
+        .env-badge.stage {
+            background: #FF6F00;
+            /* Amber */
+            color: #FFF3E0;
+            border: 1px solid #FFB300;
+        }
+
+        .env-badge.prod {
+            /* Changed to a lighter pink/red */
+            background: #823900;
+            /* Light Red/Pink A100 */
+            color: #6FFF00;
+            /* Green text for contrast on light background, or a dark grey */
+            border: 1px solid #FFCDD2;
+        }
+
+        .env-badge.unknown {
+            background: #616161;
+            /* Dark Gray */
+            color: #bdbdbd;
+            border: 1px solid #757575;
+        }
+
+        /* User Role badges - adjusted for dark background */
+        .role-badge.b2c {
+            /* Changed to a neutral light gray */
+            background: #e0e0e0;
+            color: #333;
+            /* Darker text for contrast on light background */
+            border: 1px solid #b0b0b0;
+        }
+
+        .role-badge.b2b {
+            background: #2979FF;
+            /* Blue A400 */
+            color: #E3F2FD;
+            border: 1px solid #82B1FF;
+        }
+
+        .role-badge.unknown {
+            background: #616161;
+            color: #bdbdbd;
+            border: 1px solid #757575;
+        }
+
+        .test-summary {
+            display: flex;
+            gap: 15px;
+        }
+
+        .report-card:hover .test-summary {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .test-stat {
+            text-align: center;
+        }
+
+        .test-stat-number {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #e0e0e0;
+            /* Light text for numbers */
+        }
+
+        .test-stat-label {
+            font-size: 0.8rem;
+            color: #b0b0b0;
+            /* Lighter gray for labels */
+        }
+
+        /* Specific colors for test summary stats */
+        .test-stat .test-stat-number[style*="color: #4CAF50"] {
+            color: #69F0AE !important;
+        }
+
+        /* Light green for passed */
+        .test-stat .test-stat-number[style*="color: #f44336"] {
+            color: #FF8A80 !important;
+        }
+
+        /* Light red for failed */
+        .test-stat .test-stat-number[style*="color: #ff9800"] {
+            color: #FFD740 !important;
+        }
+
+        /* Light amber for skipped/broken */
+
+
+        .report-actions {
+            /* Changed to flex for centering */
+            display: flex;
+            justify-content: center;
+            /* Center horizontally */
+            align-items: center;
+            /* Center vertically if needed */
+            margin-top: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+            /* Keep gap if there were multiple buttons */
+        }
+
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #7958d6;
+            /* Cypress purple */
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #5a5e6b;
+            /* Darker gray for secondary */
+            color: #f0f0f0;
+            /* Light text */
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+            filter: brightness(1.1);
+            /* Slight brightness increase on hover */
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #b0b0b0;
+            /* Light gray */
+            font-size: 1.1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #ffffff;
+            /* White loading text */
+        }
+
+        @media (max-width: 768px) {
+            .reports-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                flex-direction: column;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .report-title {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+
+            .report-actions {
+                flex-direction: column;
+                /* Stack buttons on small screens */
+            }
+        }
+
+
+        /* CHART SECTION STYLES */
+        .chart-section {
+            background: #373c47;
+            /* Darker gray background for chart section */
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            gap: 20px;
+        }
+
+        .chart-header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-header h2 {
+            margin: 0;
+            color: #f0f0f0;
+            /* Light text for chart titles */
+        }
+
+        .chart-filter-select {
+            padding: 8px 12px;
+            border: 1px solid #5a5e6b;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s ease, background 0.2s ease;
+            background-color: #424754;
+            color: #f0f0f0;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%23b0b0b0" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 18px;
+            padding-right: 30px;
+        }
+
+        .chart-filter-select:focus {
+            border-color: #7958d6;
+            background-color: #4c515f;
+        }
+
+        .chart-filter-select option {
+            background-color: #373c47;
+            color: #f0f0f0;
+        }
+
+        .chart-container {
+            flex: 1;
+            min-width: 350px;
+            max-width: 48%;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            /* Add some padding inside the container for charts */
+        }
+
+        /* Adjust for two charts in a row as Top 5 is removed */
+        @media (min-width: 900px) {
+
+            /* Changed breakpoint to ensure two charts per row on larger screens */
+            .chart-container {
+                max-width: 48%;
+                /* Keep them side by side */
+            }
+        }
+
+        @media (max-width: 900px) {
+            .chart-container {
+                max-width: 100%;
+            }
+
+            .chart-header {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+        }
+
+        /* NEW SECTION: Top Failed Breakdown */
+        .top-failures-breakdown {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+            justify-content: space-between;
+        }
+
+        .top-failures-card {
+            flex: 1;
+            /* Distribute space evenly */
+            min-width: 350px;
+            /* Minimum width for each card */
+            max-width: 48%;
+            /* Max width for two cards per row */
+            background: #373c47;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            color: #f0f0f0;
+        }
+
+        .top-failures-card h2 {
+            text-align: center;
+            color: #ffffff;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .top-failures-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .top-failures-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            /* Subtle separator */
+        }
+
+        .top-failures-item:last-child {
+            border-bottom: none;
+        }
+
+        .top-failures-name {
+            flex-grow: 1;
+            font-size: 0.95em;
+            color: #e0e0e0;
+            overflow: hidden;
+            /* Hide overflow text */
+            text-overflow: ellipsis;
+            /* Add ellipsis */
+            white-space: nowrap;
+            /* Prevent wrapping */
+            padding-right: 10px;
+            /* Space between name and count */
+        }
+
+        .top-failures-name strong {
+            color: #ff8a80;
+            /* Light pink for failed item names */
+        }
+
+        .top-failures-count {
+            background-color: #e91e63;
+            /* Cypress pink for count badge */
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            min-width: 30px;
+            /* Ensure a minimum size */
+            text-align: center;
+        }
+
+        .no-top-failures {
+            text-align: center;
+            padding: 15px;
+            color: #b0b0b0;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .top-failures-breakdown {
+                flex-direction: column;
+                /* Stack cards on small screens */
+            }
+
+            .top-failures-card {
+                max-width: 100%;
+                /* Full width when stacked */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 Playwright Test Reports</h1>
+            <p>Interactive Dashboard for Test Results</p>
+        </div>
+
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="total-reports">-</div>
+                <div class="stat-label">Total Reports</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="last-run">-</div>
+                <div class="stat-label">Last Run</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avg-duration">-</div>
+                <div class="stat-label">Avg Duration</div>
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <div class="chart-header">
+                <h2>Test Overview</h2>
+                <select class="chart-filter-select" id="chart-timeframe-filter">
+                    <option value="7">Last 7 Days</option>
+                    <option value="30">Last 30 Days</option>
+                    <option value="all">All Time</option>
+                </select>
+            </div>
+            <div class="chart-container">
+                <canvas id="stackedBarChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="lineChart"></canvas>
+            </div>
+        </div>
+
+        <div class="top-failures-breakdown">
+            <div class="top-failures-card">
+                <h2>Top 10 Failing Test Files</h2>
+                <ul id="topFailingFilesList" class="top-failures-list">
+                    <li class="no-top-failures">Loading...</li>
+                </ul>
+            </div>
+            <div class="top-failures-card">
+                <h2>Top 10 Error Reasons</h2>
+                <ul id="topErrorReasonsList" class="top-failures-list">
+                    <li class="no-top-failures">Loading...</li>
+                </ul>
+            </div>
+        </div>
+        <div class="controls">
+            <input type="text" class="search-box" id="search" placeholder="🔍 Search reports...">
+            <select class="filter-select" id="status-filter">
+                <option value="">All Status</option>
+                <option value="success">✅ Success</option>
+                <option value="failure">❌ Failure</option>
+                <option value="unknown">❔ Unknown</option>
+                <option value="broken">⚠️ Broken</option>
+            </select>
+            <select class="filter-select" id="env-filter">
+                <option value="">All Environments</option>
+                <option value="dev">🔧 Dev</option>
+                <option value="stage">🧪 Stage</option>
+                <option value="prod">🚀 Prod</option>
+            </select>
+            <select class="filter-select" id="role-filter">
+                <option value="">All Roles</option>
+                <option value="b2c">👤 B2C</option>
+                <option value="b2b">🏢 B2B</option>
+            </select>
+            <select class="filter-select" id="limit-filter">
+                <option value="10">Last 10</option>
+                <option value="25">Last 25</option>
+                <option value="50">Last 50</option>
+                <option value="">All Reports</option>
+            </select>
+        </div>
+
+        <div class="loading" id="loading">Loading reports...</div>
+        <div class="reports-grid" id="reports-container"></div>
+        <div class="no-results" id="no-results" style="display: none;">
+            No reports found matching your criteria.
+        </div>
+    </div>
+
+    <script>
+        let stackedBarChartInstance;
+        let lineChartInstance;
+
+        class ReportsManager {
+            constructor() {
+                this.reports = [];
+                this.filteredReports = [];
+                this.init();
+            }
+
+            async init() {
+                await this.loadReports();
+                this.setupEventListeners();
+                this.renderStats();
+                this.filterReports();
+                this.setupChartFilter();
+                this.updateCharts(); // Charts initially, also calls renderTopFailuresBreakdown
+            }
+
+            async loadReports() {
+                try {
+                    const response = await fetch('./reports.json');
+                    const data = await response.json();
+                    this.reports = data.reports.sort((a, b) =>
+                        new Date(b.dateFormatted) - new Date(a.dateFormatted)
+                    );
+
+                    if (this.reports.length > 0) {
+                        this.reports[0].isLatest = true;
+                    }
+
+                    document.getElementById('loading').style.display = 'none';
+                } catch (error) {
+                    console.error('Error loading reports:', error);
+                    document.getElementById('loading').innerHTML = 'Error loading reports or reports.json not found. Check console for details.';
+                }
+            }
+
+            setupEventListeners() {
+                document.getElementById('search').addEventListener('input', () => this.filterReports());
+                document.getElementById('status-filter').addEventListener('change', () => this.filterReports());
+                document.getElementById('env-filter').addEventListener('change', () => this.filterReports());
+                document.getElementById('role-filter').addEventListener('change', () => this.filterReports());
+                document.getElementById('limit-filter').addEventListener('change', () => this.filterReports());
+            }
+
+            setupChartFilter() {
+                document.getElementById('chart-timeframe-filter').addEventListener('change', () => {
+                    this.updateCharts(); // This now updates all charts including top failures
+                });
+            }
+
+            filterReports() {
+                const search = document.getElementById('search').value.toLowerCase();
+                const statusFilter = document.getElementById('status-filter').value;
+                const envFilter = document.getElementById('env-filter').value;
+                const roleFilter = document.getElementById('role-filter').value;
+                const limitFilter = parseInt(document.getElementById('limit-filter').value);
+
+                this.filteredReports = this.reports.filter(report => {
+                    const matchesSearch = !search ||
+                        report.id.toLowerCase().includes(search) ||
+                        (report.runNumber && report.runNumber.toString().includes(search)) ||
+                        (report.environment && report.environment.toLowerCase().includes(search)) ||
+                        (report.userRole && report.userRole.toLowerCase().includes(search)) ||
+                        (report.testSummary && JSON.stringify(report.testSummary).toLowerCase().includes(search));
+
+                    const matchesStatus = !statusFilter || report.status === statusFilter;
+                    const matchesEnv = !envFilter || report.environment === envFilter;
+                    const matchesRole = !roleFilter || report.userRole === roleFilter;
+
+                    return matchesSearch && matchesStatus && matchesEnv && matchesRole;
+                });
+
+                if (limitFilter) {
+                    this.filteredReports = this.filteredReports.slice(0, limitFilter);
+                }
+
+                this.renderReports();
+            }
+
+            renderStats() {
+                const totalReports = this.reports.length;
+                const lastRun = this.reports.length > 0 ? this.formatDate(this.reports[0].dateFormatted) : 'Never';
+
+                const avgDuration = this.calculateAverageDuration();
+
+                document.getElementById('total-reports').textContent = totalReports;
+                document.getElementById('last-run').textContent = lastRun;
+                document.getElementById('avg-duration').textContent = avgDuration;
+            }
+
+            calculateAverageDuration() {
+                const reportsWithDuration = this.reports.filter(report =>
+                    report.testSummary &&
+                    report.testSummary.time &&
+                    report.testSummary.time.duration
+                );
+
+                if (reportsWithDuration.length === 0) return 'N/A';
+
+                const totalDuration = reportsWithDuration.reduce((sum, report) =>
+                    sum + report.testSummary.time.duration, 0);
+
+                const avgDurationMs = totalDuration / reportsWithDuration.length;
+                return this.formatDuration(avgDurationMs);
+            }
+
+            formatDuration(durationMs) {
+                if (!durationMs || durationMs === 0) return 'N/A';
+
+                const seconds = Math.floor(durationMs / 1000);
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+
+                if (minutes > 0) {
+                    return `${minutes}m ${remainingSeconds}s`;
+                } else {
+                    return `${remainingSeconds}s`;
+                }
+            }
+
+            formatTimestamp(timestamp) {
+                if (!timestamp) return 'N/A';
+
+                const date = new Date(timestamp);
+                return date.toLocaleString('en-US', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+            }
+
+            formatDateTimeRange(report) {
+                if (!report.dateFormatted) return '📅 Date not available';
+
+                const startDate = new Date(report.dateFormatted);
+
+                // Changed to two-digit year
+                const dateOnly = startDate.toLocaleDateString('en-US', {
+                    year: '2-digit', // Changed to '2-digit'
+                    month: '2-digit',
+                    day: '2-digit'
+                });
+
+                const startTime = startDate.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+
+                let endTime = '';
+                let durationText = '';
+
+                if (report.testSummary && report.testSummary.time && report.testSummary.time.duration) {
+                    const durationMs = report.testSummary.time.duration;
+                    const endDate = new Date(startDate.getTime() + durationMs);
+
+                    endTime = endDate.toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false
+                    });
+
+                    durationText = this.formatDuration(durationMs);
+
+                    return `📅 ${dateOnly} • 🕒 ${startTime} → ${endTime} • ⏱️ ${durationText}`;
+                } else {
+                    return `📅 ${dateOnly} • 🕒 ${startTime}`;
+                }
+            }
+
+            renderTimingInfo(testSummary) {
+                return '';
+            }
+
+            renderReports() {
+                const container = document.getElementById('reports-container');
+                const noResults = document.getElementById('no-results');
+
+                if (!container || !noResults) {
+                    console.error("HTML elements 'reports-container' or 'no-results' not found.");
+                    return;
+                }
+
+                if (this.filteredReports.length === 0) {
+                    container.innerHTML = '';
+                    noResults.style.display = 'block';
+                    return;
+                }
+
+                noResults.style.display = 'none';
+
+                container.innerHTML = this.filteredReports.map(report => {
+                    const testSummaryHtml = this.renderTestSummary(report.testSummary);
+                    const timingInfoHtml = this.renderTimingInfo(report.testSummary);
+
+                    const dateObj = new Date(report.dateFormatted);
+                    // Changed to two-digit year here as well for consistency in report cards
+                    const formattedDateOnly = dateObj.toLocaleDateString('en-US', {
+                        year: '2-digit', // Changed to '2-digit'
+                        month: '2-digit',
+                        day: '2-digit'
+                    });
+
+                    const envBadge = report.environment && report.environment !== 'unknown'
+                        ? `<span class="env-badge ${report.environment}">${report.environment}</span>`
+                        : `<span class="env-badge unknown">unknownEnv</span>`;
+
+                    const roleBadge = report.userRole && report.userRole !== 'unknown'
+                        ? `<span class="role-badge ${report.userRole}">${report.userRole}</span>`
+                        : `<span class="role-badge unknown">unknownRole</span>`;
+
+                    const runNumberBadge = report.runNumber
+                        ? `<span class="run-number-badge">#${report.runNumber}</span>`
+                        : '';
+
+                    return `
+                        <div class="report-card ${report.status} ${report.isLatest ? 'latest' : ''}">
+                            <div class="report-header">
+                                <div class="report-title">
+                                    <span>${formattedDateOnly}</span>
+                                    ${runNumberBadge}
+                                    ${report.isLatest ? ' 🌟' : ''}
+                                </div>
+                                <span class="status-badge ${report.status}">
+                                    ${report.status === 'success' ? '✅ PASSED' :
+                                    report.status === 'failure' ? '❌ FAILED' :
+                                    report.status === 'broken' ? '⚠️ BROKEN' : '❔ UNKNOWN'}
+                                </span>
+                            </div>
+                            
+                            <div class="badge-container">
+                                ${envBadge}
+                                ${roleBadge}
+                            </div>
+                            
+                            <div class="report-meta">
+                                ${this.formatDateTimeRange(report)}
+                            </div>
+                            
+                            ${timingInfoHtml}
+                            ${testSummaryHtml}
+                            
+                            <div class="report-actions">
+                                <a href="${report.path}" class="btn btn-primary" target="_blank">📊 View Report</a>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            renderTestSummary(summary) {
+                if (!summary || summary === 'N/A' || Object.keys(summary).length === 0) {
+                    return '<div class="test-summary">Test details not available</div>';
+                }
+
+                try {
+                    const data = typeof summary === 'string' ? JSON.parse(summary) : summary;
+
+                    if (!data || !data.statistic) {
+                        console.warn("Invalid summary data structure:", summary);
+                        return '<div class="test-summary">Test details not available (bad structure)</div>';
+                    }
+
+                    return `
+                        <div class="test-summary">
+                            <div class="test-stat">
+                                <div class="test-stat-number" style="color: #4CAF50">${data.statistic.passed || 0}</div>
+                                <div class="test-stat-label">Passed</div>
+                            </div>
+                            <div class="test-stat">
+                                <div class="test-stat-number" style="color: #f44336">${data.statistic.failed || 0}</div>
+                                <div class="test-stat-label">Failed</div>
+                            </div>
+                            <div class="test-stat">
+                                <div class="test-stat-number" style="color: #ff9800">${data.statistic.skipped || 0}</div>
+                                <div class="test-stat-label">Skipped</div>
+                            </div>
+                            <div class="test-stat">
+                                <div class="test-stat-number" style="color: #FF9800">${data.statistic.broken || 0}</div>
+                                <div class="test-stat-label">Broken</div>
+                            </div>
+                            <div class="test-stat">
+                                <div class="test-stat-number">${data.statistic.total || 0}</div>
+                                <div class="test-stat-label">Total</div>
+                            </div>
+                        </div>
+                    `;
+                } catch (e) {
+                    console.error("Error parsing test summary:", e, summary);
+                    return '<div class="test-summary">Error loading test details (parsing error)</div>';
+                }
+            }
+
+            formatDate(dateString) {
+                try {
+                    const date = new Date(dateString);
+                    if (isNaN(date.getTime())) {
+                        return "Invalid Date";
+                    }
+
+                    return date.toLocaleString('en-US', {
+                        year: '2-digit', // Changed to '2-digit'
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: false,
+                        timeZone: 'America/Sao_Paulo'
+                    });
+                } catch (e) {
+                    console.error("Error formatting date:", e, dateString);
+                    return "Invalid Date";
+                }
+            }
+
+            copyLink(path) {
+                const fullUrl = window.location.origin + window.location.pathname.replace('/index.html', '') + '/' + path;
+                navigator.clipboard.writeText(fullUrl).then(() => {
+                    alert('Link copied to clipboard!');
+                }).catch(() => {
+                    alert('Could not copy link');
+                });
+            }
+
+            // Centralized chart and top failures update function
+            updateCharts() {
+                const timeframeFilter = document.getElementById('chart-timeframe-filter').value;
+                const filteredReportsForCharts = this.getReportsByTimeframe(timeframeFilter);
+
+                this.renderStackedBarChart(filteredReportsForCharts);
+                this.renderLineChart(filteredReportsForCharts);
+                this.renderTopFailuresBreakdown(filteredReportsForCharts); // This call is essential now
+            }
+
+            // Filter reports by timeframe (already exists)
+            getReportsByTimeframe(timeframe) {
+                const now = new Date();
+                let filterDate = new Date();
+
+                if (timeframe === '7') {
+                    filterDate.setDate(now.getDate() - 7);
+                } else if (timeframe === '30') {
+                    filterDate.setDate(now.getDate() - 30);
+                } else {
+                    return this.reports; // 'all' or default
+                }
+
+                return this.reports.filter(report => {
+                    const reportDate = new Date(report.dateFormatted);
+                    return reportDate >= filterDate;
+                });
+            }
+
+            renderStackedBarChart(dataToChart) {
+                const ctxBar = document.getElementById('stackedBarChart').getContext('2d');
+
+                if (stackedBarChartInstance) {
+                    stackedBarChartInstance.destroy();
+                }
+
+                const aggregatedData = {};
+                dataToChart.forEach(report => {
+                    // Changed to two-digit year
+                    const date = new Date(report.dateFormatted).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: '2-digit' // Changed to '2-digit'
+                    });
+                    if (!aggregatedData[date]) {
+                        aggregatedData[date] = { passed: 0, failed: 0 };
+                    }
+                    if (report.testSummary?.statistic?.passed) {
+                        aggregatedData[date].passed += report.testSummary.statistic.passed;
+                    }
+                    if (report.testSummary?.statistic?.failed) {
+                        aggregatedData[date].failed += report.testSummary.statistic.failed;
+                    }
+                });
+
+                const labels = Object.keys(aggregatedData).sort((a, b) => {
+                    // Improved parseDateForSort to handle two-digit years more gracefully
+                    const parseDateForSort = (dateStr) => {
+                        const parts = dateStr.match(/(\w{3})\s(\d{1,2}),\s(\d{2})/); // Match "Mon Day, YY"
+                        if (parts) {
+                            const [_, monthStr, dayStr, yearStr] = parts;
+                            const monthMap = {'Jan':0, 'Feb':1, 'Mar':2, 'Apr':3, 'May':4, 'Jun':5, 'Jul':6, 'Aug':7, 'Sep':8, 'Oct':9, 'Nov':10, 'Dec':11};
+                            const month = monthMap[monthStr];
+                            const day = parseInt(dayStr);
+                            const year = 2000 + parseInt(yearStr); // Assume 20xx for two-digit years
+                            return new Date(year, month, day);
+                        }
+                        return new Date(dateStr); // Fallback for other formats
+                    };
+                    return parseDateForSort(a) - parseDateForSort(b);
+                });
+                
+                const passedPercentages = [];
+                const failedPercentages = [];
+
+                labels.forEach(date => {
+                    const total = aggregatedData[date].passed + aggregatedData[date].failed;
+                    if (total > 0) {
+                        passedPercentages.push((aggregatedData[date].passed / total) * 100);
+                        failedPercentages.push((aggregatedData[date].failed / total) * 100);
+                    } else {
+                        passedPercentages.push(0);
+                        failedPercentages.push(0);
+                    }
+                });
+
+                stackedBarChartInstance = new Chart(ctxBar, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Passed %',
+                            data: passedPercentages,
+                            backgroundColor: '#6a4cd7', /* Cypress purple for Passed */
+                            borderColor: '#5b3fc0',
+                            borderWidth: 1
+                        }, {
+                            label: 'Failed %',
+                            data: failedPercentages,
+                            backgroundColor: '#e91e63', /* Cypress pink for Failed */
+                            borderColor: '#c2185b',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true,
+                                title: {
+                                    display: true,
+                                    text: 'Date',
+                                    color: '#b0b0b0' /* Lighter gray for axis titles */
+                                },
+                                ticks: {
+                                    color: '#b0b0b0' /* Lighter gray for ticks */
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.08)' /* Light grid lines */
+                                }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'Percentage (%)',
+                                    color: '#b0b0b0'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    },
+                                    color: '#b0b0b0'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.08)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Passed vs Failed Percentage by Date',
+                                color: '#f0f0f0' /* Light title color */
+                            },
+                            legend: {
+                                display: true, /* Changed to true for clarity with new colors */
+                                labels: {
+                                    color: '#f0f0f0' /* Light text for legend labels */
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        label += context.raw.toFixed(2) + '%';
+                                        return label;
+                                    },
+                                    footer: function(tooltipItems) {
+                                        return 'Total: 100%'; 
+                                    }
+                                },
+                                backgroundColor: '#424754', /* Dark tooltip background */
+                                titleColor: '#f0f0f0', /* Light tooltip title */
+                                bodyColor: '#f0f0f0', /* Light tooltip body */
+                                borderColor: '#5a5e6b',
+                                borderWidth: 1
+                            }
+                        }
+                    }
+                });
+            }
+
+            renderLineChart(dataToChart) {
+                const ctxLine = document.getElementById('lineChart').getContext('2d');
+
+                if (lineChartInstance) {
+                    lineChartInstance.destroy();
+                }
+
+                const sortedData = dataToChart.sort((a, b) => new Date(a.dateFormatted) - new Date(b.dateFormatted));
+
+                const aggregatedData = {};
+                sortedData.forEach(report => {
+                    // Changed to two-digit year
+                    const date = new Date(report.dateFormatted).toLocaleDateString('en-US', {
+                        month: '2-digit',
+                        day: '2-digit',
+                        year: '2-digit' // Changed to '2-digit'
+                    });
+                    if (!aggregatedData[date]) {
+                        aggregatedData[date] = { passed: 0, failed: 0 };
+                    }
+                    if (report.testSummary?.statistic?.passed) {
+                        aggregatedData[date].passed += report.testSummary.statistic.passed;
+                    }
+                    if (report.testSummary?.statistic?.failed) {
+                        aggregatedData[date].failed += report.testSummary.statistic.failed;
+                    }
+                });
+
+                const labels = Object.keys(aggregatedData);
+                const passedData = labels.map(date => aggregatedData[date].passed);
+                const failedData = labels.map(date => aggregatedData[date].failed);
+
+                lineChartInstance = new Chart(ctxLine, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Passed',
+                            data: passedData,
+                            borderColor: '#6a4cd7', /* Cypress purple */
+                            backgroundColor: 'rgba(106, 76, 215, 0.2)', /* Translucent Cypress purple */
+                            tension: 0.3,
+                            fill: true
+                        }, {
+                            label: 'Failed',
+                            data: failedData,
+                            borderColor: '#e91e63', /* Cypress pink */
+                            backgroundColor: 'rgba(233, 30, 99, 0.2)', /* Translucent Cypress pink */
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Test Count',
+                                    color: '#b0b0b0'
+                                },
+                                ticks: {
+                                    color: '#b0b0b0'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.08)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Date',
+                                    color: '#b0b0b0'
+                                },
+                                ticks: {
+                                    color: '#b0b0b0'
+                                },
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.08)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Passed/Failed Trend Over Time',
+                                color: '#f0f0f0'
+                            },
+                            legend: {
+                                labels: {
+                                    color: '#f0f0f0' /* Light text for legend labels */
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: '#424754',
+                                titleColor: '#f0f0f0',
+                                bodyColor: '#f0f0f0',
+                                borderColor: '#5a5e6b',
+                                borderWidth: 1
+                            }
+                        }
+                    }
+                });
+            }
+
+            // NEW: Function to render the top failures breakdown
+            renderTopFailuresBreakdown(dataForAnalysis) {
+                const topFailingFilesList = document.getElementById('topFailingFilesList');
+                const topErrorReasonsList = document.getElementById('topErrorReasonsList');
+
+                topFailingFilesList.innerHTML = ''; // Clear previous content
+                topErrorReasonsList.innerHTML = ''; // Clear previous content
+
+                const fileFailures = {};
+                const errorReasons = {};
+
+                // Iterate through reports within the filtered timeframe
+                dataForAnalysis.forEach(report => {
+                    // Access failedTestsDetails directly from the report object
+                    if (report.failedTestsDetails && report.failedTestsDetails.length > 0) {
+                        report.failedTestsDetails.forEach(testError => {
+                            // Aggregate by test file
+                            const fileName = testError.testFile || 'Unknown File';
+                            fileFailures[fileName] = (fileFailures[fileName] || 0) + 1;
+
+                            // Aggregate by error reason (briefly)
+                            const rawErrorMessage = testError.errorMessage || 'No message';
+                            let briefErrorMessage = rawErrorMessage.split('\n')[0]; // Take first line
+                            if (briefErrorMessage.length > 80) { // Limit length for display
+                                briefErrorMessage = briefErrorMessage.substring(0, 80) + '...';
+                            }
+                            briefErrorMessage = briefErrorMessage.trim();
+
+                            errorReasons[briefErrorMessage] = (errorReasons[briefErrorMessage] || 0) + 1;
+                        });
+                    }
+                });
+
+                // Sort and render Top 10 Failing Test Files
+                const sortedFileFailures = Object.entries(fileFailures)
+                    .sort(([, countA], [, countB]) => countB - countA)
+                    .slice(0, 10); // Top 10
+
+                if (sortedFileFailures.length > 0) {
+                    sortedFileFailures.forEach(([fileName, count]) => {
+                        const item = document.createElement('li');
+                        item.className = 'top-failures-item';
+                        item.innerHTML = `
+                            <span class="top-failures-name">${fileName}</span>
+                            <span class="top-failures-count">${count}</span>
+                        `;
+                        topFailingFilesList.appendChild(item);
+                    });
+                } else {
+                    topFailingFilesList.innerHTML = '<li class="no-top-failures">No failing files in this timeframe.</li>';
+                }
+
+                // Sort and render Top 10 Error Reasons
+                const sortedErrorReasons = Object.entries(errorReasons)
+                    .sort(([, countA], [, countB]) => countB - countA)
+                    .slice(0, 10); // Top 10
+
+                if (sortedErrorReasons.length > 0) {
+                    sortedErrorReasons.forEach(([reason, count]) => {
+                        const item = document.createElement('li');
+                        item.className = 'top-failures-item';
+                        item.innerHTML = `
+                            <span class="top-failures-name">${reason}</span>
+                            <span class="top-failures-count">${count}</span>
+                        `;
+                        topErrorReasonsList.appendChild(item);
+                    });
+                } else {
+                    topErrorReasonsList.innerHTML = '<li class="no-top-failures">No common error reasons in this timeframe.</li>';
+                }
+            }
+        }
+
+        const reportManager = new ReportsManager();
+    </script>
+</body>
+
+</html>
