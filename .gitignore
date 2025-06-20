@@ -1,0 +1,13 @@
+.qodo
+node_modules/
+.playwright/
+playwright/.cache/
+test-results/
+screenshots/
+videos/
+.env
+dist/
+.vscode/
+.idea/
+allure-report/
+allure-results/
