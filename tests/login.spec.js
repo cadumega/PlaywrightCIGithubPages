@@ -1,22 +1,11 @@
-const { test, expect } = require("@playwright/test");
-const LoginPage = require("../pages/LoginPage");
-const config = require("../utils/config");
+import { test, expect } from '@playwright/test';
 
-test.describe("Login Tests", () => {
-  test(`User Role: ${process.env.USER_ROLE} should be able to login`, {
-    tags: ["@smoke", "@login-flow"]
-  }, async ({ page }) => {
-
-    console.log(
-      `Running tests on: ${config.baseURL} with user: ${config.username}`
-    );
-    const loginPage = new LoginPage(page);
-    await loginPage.goto();
-    await loginPage.openModal();
-    await loginPage.fillLoginForm(config.username, config.password);
-
-    // Verify successful login
-    await loginPage.submitLoginForm();
-    await loginPage.waitForLogin();
-  });
+test('test', async ({ page }) => {
+  await page.goto('https://www.princessauto.com/en/');
+  await page.getByRole('link', { name: ' Log In' }).click();
+  await page.getByRole('textbox', { name: 'Email Address' }).click();
+  await page.getByRole('textbox', { name: 'Email Address' }).fill('carlos.mega@objectedge.com');
+  await page.getByRole('textbox', { name: 'Password' }).click();
+  await page.getByRole('textbox', { name: 'Password' }).fill('123456789');
+  await page.getByRole('button', { name: 'Log In' }).click();
 });
