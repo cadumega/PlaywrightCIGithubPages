@@ -229,7 +229,7 @@
         .report-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start; /* Aligns items to the top of the flex container */
             margin-bottom: 15px;
             font-size: 1.1rem;
         }
@@ -238,11 +238,24 @@
             font-size: 1.2rem;
             font-weight: bold;
             color: #ffffff;
-            /* White title text */
             display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
+            flex-wrap: wrap; /* Allows items to wrap to the next line */
+            align-items: center; /* Vertically centers items within their flex line */
+            gap: 8px; /* Space between date, run number, folder label, and star */
+            flex-grow: 1; /* Allows the title section to take up available space */
+            margin-right: 10px; /* Provides some space before the status badge */
+        }
+
+        .folder-label {
+            background: #5a5e6b;
+            /* Darker gray for the folder label */
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         .run-number-badge {
@@ -263,6 +276,10 @@
             font-size: 0.9rem;
             font-weight: bold;
             color: white;
+            white-space: nowrap;
+            /* Prevent status badge text from wrapping */
+            margin-left: auto;
+            /* Pushes the status badge to the far right */
         }
 
         .status-badge.success {
@@ -985,17 +1002,43 @@
                         day: '2-digit'
                     });
 
-                    const envBadge = report.environment && report.environment !== 'unknown'
-                        ? `<span class="env-badge ${report.environment}">${report.environment}</span>`
-                        : `<span class="env-badge unknown">unknownEnv</span>`;
+                    const envBadge = report.environment && report.environment !== 'unknown' ?
+                        `<span class="env-badge ${report.environment}">${report.environment}</span>` :
+                        `<span class="env-badge unknown">unknownEnv</span>`;
 
-                    const roleBadge = report.userRole && report.userRole !== 'unknown'
-                        ? `<span class="role-badge ${report.userRole}">${report.userRole}</span>`
-                        : `<span class="role-badge unknown">unknownRole</span>`;
+                    const roleBadge = report.userRole && report.userRole !== 'unknown' ?
+                        `<span class="role-badge ${report.userRole}">${report.userRole}</span>` :
+                        `<span class="role-badge unknown">unknownRole</span>`;
 
-                    const runNumberBadge = report.runNumber
-                        ? `<span class="run-number-badge">#${report.runNumber}</span>`
-                        : '';
+                    const runNumberBadge = report.runNumber ?
+                        `<span class="run-number-badge">#${report.runNumber}</span>` :
+                        '';
+
+                    // Extract the folder name from the testFile, or fallback to 'path' if needed
+                    let folderName = 'Unknown Folder';
+                    if (report.executionMetadata && report.executionMetadata.failedTestsDetails && report.executionMetadata.failedTestsDetails.length > 0) {
+                        const firstTestFile = report.executionMetadata.failedTestsDetails[0].testFile;
+                        if (firstTestFile) {
+                            const parts = firstTestFile.split('/');
+                            if (parts.length > 1) {
+                                folderName = parts[0]; // Gets 'smoke'
+                            } else {
+                                folderName = firstTestFile.replace(/\.spec\.js$/, ''); // Fallback for root level spec files
+                            }
+                        }
+                    } else if (report.path) {
+                        // Fallback to extract from report.path if no failedTestsDetails or no testFile
+                        // This extracts the last non-empty part of the path, which might be the timestamp ID
+                        const pathParts = report.path.split('/');
+                        for (let i = pathParts.length - 1; i >= 0; i--) {
+                            if (pathParts[i] !== '') {
+                                folderName = pathParts[i];
+                                break;
+                            }
+                        }
+                    }
+                    const folderLabel = `<span class="folder-label">📁 ${folderName}</span>`;
+
 
                     return `
                         <div class="report-card ${report.status} ${report.isLatest ? 'latest' : ''}">
@@ -1003,6 +1046,7 @@
                                 <div class="report-title">
                                     <span>${formattedDateOnly}</span>
                                     ${runNumberBadge}
+                                    ${folderLabel}
                                     ${report.isLatest ? ' 🌟' : ''}
                                 </div>
                                 <span class="status-badge ${report.status}">
@@ -1151,7 +1195,10 @@
                         year: '2-digit' // Changed to '2-digit'
                     });
                     if (!aggregatedData[date]) {
-                        aggregatedData[date] = { passed: 0, failed: 0 };
+                        aggregatedData[date] = {
+                            passed: 0,
+                            failed: 0
+                        };
                     }
                     if (report.testSummary?.statistic?.passed) {
                         aggregatedData[date].passed += report.testSummary.statistic.passed;
@@ -1167,7 +1214,20 @@
                         const parts = dateStr.match(/(\w{3})\s(\d{1,2}),\s(\d{2})/); // Match "Mon Day, YY"
                         if (parts) {
                             const [_, monthStr, dayStr, yearStr] = parts;
-                            const monthMap = {'Jan':0, 'Feb':1, 'Mar':2, 'Apr':3, 'May':4, 'Jun':5, 'Jul':6, 'Aug':7, 'Sep':8, 'Oct':9, 'Nov':10, 'Dec':11};
+                            const monthMap = {
+                                'Jan': 0,
+                                'Feb': 1,
+                                'Mar': 2,
+                                'Apr': 3,
+                                'May': 4,
+                                'Jun': 5,
+                                'Jul': 6,
+                                'Aug': 7,
+                                'Sep': 8,
+                                'Oct': 9,
+                                'Nov': 10,
+                                'Dec': 11
+                            };
                             const month = monthMap[monthStr];
                             const day = parseInt(dayStr);
                             const year = 2000 + parseInt(yearStr); // Assume 20xx for two-digit years
@@ -1177,7 +1237,7 @@
                     };
                     return parseDateForSort(a) - parseDateForSort(b);
                 });
-                
+
                 const passedPercentages = [];
                 const failedPercentages = [];
 
@@ -1199,13 +1259,15 @@
                         datasets: [{
                             label: 'Passed %',
                             data: passedPercentages,
-                            backgroundColor: '#6a4cd7', /* Cypress purple for Passed */
+                            backgroundColor: '#6a4cd7',
+                            /* Cypress purple for Passed */
                             borderColor: '#5b3fc0',
                             borderWidth: 1
                         }, {
                             label: 'Failed %',
                             data: failedPercentages,
-                            backgroundColor: '#e91e63', /* Cypress pink for Failed */
+                            backgroundColor: '#e91e63',
+                            /* Cypress pink for Failed */
                             borderColor: '#c2185b',
                             borderWidth: 1
                         }]
@@ -1255,7 +1317,8 @@
                                 color: '#f0f0f0' /* Light title color */
                             },
                             legend: {
-                                display: true, /* Changed to true for clarity with new colors */
+                                display: true,
+                                /* Changed to true for clarity with new colors */
                                 labels: {
                                     color: '#f0f0f0' /* Light text for legend labels */
                                 }
@@ -1271,12 +1334,15 @@
                                         return label;
                                     },
                                     footer: function(tooltipItems) {
-                                        return 'Total: 100%'; 
+                                        return 'Total: 100%';
                                     }
                                 },
-                                backgroundColor: '#424754', /* Dark tooltip background */
-                                titleColor: '#f0f0f0', /* Light tooltip title */
-                                bodyColor: '#f0f0f0', /* Light tooltip body */
+                                backgroundColor: '#424754',
+                                /* Dark tooltip background */
+                                titleColor: '#f0f0f0',
+                                /* Light tooltip title */
+                                bodyColor: '#f0f0f0',
+                                /* Light tooltip body */
                                 borderColor: '#5a5e6b',
                                 borderWidth: 1
                             }
@@ -1303,7 +1369,10 @@
                         year: '2-digit' // Changed to '2-digit'
                     });
                     if (!aggregatedData[date]) {
-                        aggregatedData[date] = { passed: 0, failed: 0 };
+                        aggregatedData[date] = {
+                            passed: 0,
+                            failed: 0
+                        };
                     }
                     if (report.testSummary?.statistic?.passed) {
                         aggregatedData[date].passed += report.testSummary.statistic.passed;
@@ -1324,15 +1393,19 @@
                         datasets: [{
                             label: 'Passed',
                             data: passedData,
-                            borderColor: '#6a4cd7', /* Cypress purple */
-                            backgroundColor: 'rgba(106, 76, 215, 0.2)', /* Translucent Cypress purple */
+                            borderColor: '#6a4cd7',
+                            /* Cypress purple */
+                            backgroundColor: 'rgba(106, 76, 215, 0.2)',
+                            /* Translucent Cypress purple */
                             tension: 0.3,
                             fill: true
                         }, {
                             label: 'Failed',
                             data: failedData,
-                            borderColor: '#e91e63', /* Cypress pink */
-                            backgroundColor: 'rgba(233, 30, 99, 0.2)', /* Translucent Cypress pink */
+                            borderColor: '#e91e63',
+                            /* Cypress pink */
+                            backgroundColor: 'rgba(233, 30, 99, 0.2)',
+                            /* Translucent Cypress pink */
                             tension: 0.3,
                             fill: true
                         }]
@@ -1435,9 +1508,9 @@
                         const item = document.createElement('li');
                         item.className = 'top-failures-item';
                         item.innerHTML = `
-                            <span class="top-failures-name">${fileName}</span>
-                            <span class="top-failures-count">${count}</span>
-                        `;
+                                <span class="top-failures-name">${fileName}</span>
+                                <span class="top-failures-count">${count}</span>
+                            `;
                         topFailingFilesList.appendChild(item);
                     });
                 } else {
@@ -1454,9 +1527,9 @@
                         const item = document.createElement('li');
                         item.className = 'top-failures-item';
                         item.innerHTML = `
-                            <span class="top-failures-name">${reason}</span>
-                            <span class="top-failures-count">${count}</span>
-                        `;
+                                <span class="top-failures-name">${reason}</span>
+                                <span class="top-failures-count">${count}</span>
+                            `;
                         topErrorReasonsList.appendChild(item);
                     });
                 } else {

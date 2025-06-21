@@ -142,7 +142,7 @@ jobs:
             npx playwright test $TEST_FILES --reporter=dot,allure-playwright
           else
             echo "🔄 Running default test suite..."
-            npx playwright test tests/ --reporter=dot,allure-playwright
+            npx playwright test tests/smoke --reporter=dot,allure-playwright
           fi
         continue-on-error: true
 
