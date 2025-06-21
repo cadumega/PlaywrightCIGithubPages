@@ -1,6 +1,92 @@
 {
   "reports": [
     {
+      "id": "20250621_101557",
+      "timestamp": "20250621 101557",
+      "dateFormatted": "2025-06-21T10:15:57Z",
+      "status": "failure",
+      "runNumber": "10",
+      "runId": "15794718868",
+      "path": "reports/20250621_101557/",
+      "testSummary": {
+        "reportName": "Allure Report",
+        "testRuns": [],
+        "statistic": {
+          "failed": 2,
+          "broken": 0,
+          "skipped": 0,
+          "passed": 1,
+          "unknown": 0,
+          "total": 3
+        },
+        "time": {
+          "start": 1750500986408,
+          "stop": 1750501065461,
+          "duration": 79053,
+          "minDuration": 6245,
+          "maxDuration": 36683,
+          "sumDuration": 78213
+        }
+      },
+      "environment": "stage",
+      "userRole": "b2c",
+      "executionMetadata": {
+        "environment": "stage",
+        "userRole": "b2c",
+        "startTime": "2025-06-21T10:15:57.259Z",
+        "endTime": "2025-06-21T10:17:45.651Z",
+        "duration": 108,
+        "runNumber": "10",
+        "runId": "15794718868",
+        "sha": "e8d593fd1c53fabc57efa55b112958a159e9c756",
+        "ref": "refs/heads/master",
+        "actor": "cadumega",
+        "timestamp": "20250621_101557",
+        "branch": "master",
+        "eventName": "schedule",
+        "workflowName": "Playwright Tests with Allure Report",
+        "failedTestsDetails": [
+          {
+            "name": "Wishlist",
+            "fullName": "smoke/wishlist.spec.js:3:5",
+            "status": "failed",
+            "errorMessage": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('Welcome Shalaka')",
+            "stackTrace": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('Welcome Shalaka')\n\n    at /home/runner/work/PlaywrightCIGithubPages/PlaywrightCIGithubPages/tests/smoke/wishlist.spec.js:13:45",
+            "testFile": "smoke/wishlist.spec.js"
+          },
+          {
+            "name": "test",
+            "fullName": "smoke/loginfail.spec.js:3:5",
+            "status": "failed",
+            "errorMessage": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('textbox', { name: 'x' })",
+            "stackTrace": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('textbox', { name: 'x' })\n\n    at /home/runner/work/PlaywrightCIGithubPages/PlaywrightCIGithubPages/tests/smoke/loginfail.spec.js:8:50",
+            "testFile": "smoke/loginfail.spec.js"
+          }
+        ]
+      },
+      "startTime": "2025-06-21T10:15:57.259Z",
+      "endTime": "2025-06-21T10:17:45.651Z",
+      "duration": "108",
+      "failedTestsDetails": [
+        {
+          "name": "Wishlist",
+          "fullName": "smoke/wishlist.spec.js:3:5",
+          "status": "failed",
+          "errorMessage": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('Welcome Shalaka')",
+          "stackTrace": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByText('Welcome Shalaka')\n\n    at /home/runner/work/PlaywrightCIGithubPages/PlaywrightCIGithubPages/tests/smoke/wishlist.spec.js:13:45",
+          "testFile": "smoke/wishlist.spec.js"
+        },
+        {
+          "name": "test",
+          "fullName": "smoke/loginfail.spec.js:3:5",
+          "status": "failed",
+          "errorMessage": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('textbox', { name: 'x' })",
+          "stackTrace": "TimeoutError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole('textbox', { name: 'x' })\n\n    at /home/runner/work/PlaywrightCIGithubPages/PlaywrightCIGithubPages/tests/smoke/loginfail.spec.js:8:50",
+          "testFile": "smoke/loginfail.spec.js"
+        }
+      ]
+    },
+    {
       "id": "20250621_060721",
       "timestamp": "20250621 060721",
       "dateFormatted": "2025-06-21T06:07:21Z",
