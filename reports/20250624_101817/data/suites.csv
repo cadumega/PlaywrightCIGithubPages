@@ -1,0 +1,4 @@
+"DESCRIPTION","DURATION IN MS","NAME","PARENT SUITE","START TIME","STATUS","STOP TIME","SUB SUITE","SUITE","TEST CLASS","TEST METHOD"
+"","36557","test","chromium","Tue Jun 24 10:18:57 UTC 2025","failed","Tue Jun 24 10:19:33 UTC 2025","","smoke/loginfail.spec.js","",""
+"","7530","test","chromium","Tue Jun 24 10:18:49 UTC 2025","passed","Tue Jun 24 10:18:56 UTC 2025","","smoke/login.spec.js","",""
+"","37810","Wishlist","chromium","Tue Jun 24 10:19:34 UTC 2025","failed","Tue Jun 24 10:20:12 UTC 2025","","smoke/wishlist.spec.js","",""
