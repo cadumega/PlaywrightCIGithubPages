@@ -1,0 +1,27 @@
+{
+  "environment": "stage",
+  "userRole": "b2c",
+  "startTime": "2025-06-29T05:58:04.497Z",
+  "endTime": "2025-06-29T05:58:42.878Z",
+  "duration": 38,
+  "runNumber": "26",
+  "runId": "15952140833",
+  "sha": "661cdd84708e22afcd2dde34b65c73eb7c0baf10",
+  "ref": "refs/heads/master",
+  "actor": "cadumega",
+  "timestamp": "20250629_055804",
+  "branch": "master",
+  "eventName": "workflow_dispatch",
+  "workflowName": "Playwright Tests with Allure Report",
+  "failedTestsDetails": [],
+  "allTestsDetails": [
+  {
+    "name": "test",
+    "fullName": "tickets/1234.spec.js:2:5",
+    "status": "passed",
+    "errorMessage": "N/A",
+    "stackTrace": "N/A",
+    "testFile": "tickets/1234.spec.js"
+  }
+]
+}

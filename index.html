@@ -7,7 +7,7 @@
     <title>🎭 Playwright Test Reports Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* Base styles - Largely kept from previous iterations but adjusted for Cypress feel */
+        /* Base styles */
         * {
             margin: 0;
             padding: 0;
@@ -15,215 +15,186 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            /* Cypress-like background: darker, subtle gradient */
-            background: #2a2e37;
-            /* Dark charcoal */
-            color: #e0e0e0;
-            /* Light gray text for contrast */
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #FFFFFF; /* White background */
+            color: #4A4A4A; /* Dark gray for primary text */
             min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align content to the top */
+            padding: 20px; /* Padding around the entire content */
         }
 
         .container {
+            width: 100%;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
-            /* No specific background, body handles it */
+            padding: 0; /* Container itself doesn't need padding now that body has it */
         }
 
         .header {
             text-align: center;
-            color: #ffffff;
-            /* White text for header */
-            margin-bottom: 20px;
-            /* Reduced margin */
-            /* Cypress-like header: light blur on dark background */
-            background: rgba(42, 46, 55, 0.6);
-            /* Slightly transparent dark charcoal */
-            backdrop-filter: blur(5px);
-            padding: 20px;
-            border-radius: 10px;
-            /* Slightly less rounded than before */
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            /* Softer shadow */
+            background: #FFFFFF; /* White background for header */
+            padding: 25px 20px;
+            border-radius: 12px; /* Soft rounded corners */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Softer shadow for a light theme */
+            color: #333333; /* Darker text for header */
+            margin-bottom: 30px;
         }
 
         .header h1 {
-            font-size: 2rem;
-            /* Reduced font size */
-            margin-bottom: 5px;
-            /* Reduced margin */
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+            text-shadow: none; /* Remove text shadow for cleaner look */
         }
 
         .header p {
-            font-size: 0.9rem;
-            /* Reduced font size for tagline */
+            font-size: 1rem;
+            color: #666666; /* Softer gray for tagline */
         }
 
         /* Stats Section */
         .stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            /* Min width adjusted */
-            gap: 15px;
-            /* Reduced gap */
-            margin-bottom: 25px;
-            /* Reduced margin */
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
         }
 
         .stat-card {
-            /* Cypress card background: lighter gray/white on dark bg */
-            background: #373c47;
-            /* Darker gray for cards */
-            padding: 15px;
-            /* Reduced padding */
-            border-radius: 8px;
-            /* Softer rounded corners */
+            background: #FFFFFF; /* White background for stat cards */
+            padding: 20px;
+            border-radius: 10px;
             text-align: center;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            /* Subtler shadow */
-            transition: transform 0.2s ease, background 0.2s ease;
-            color: #f0f0f0;
-            /* Light text for stats */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); /* Lighter shadow */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            color: #4A4A4A; /* Dark text for stats */
+            border: 1px solid #EEEEEE; /* Subtle border */
         }
 
         .stat-card:hover {
             transform: translateY(-3px);
-            background: #424754;
-            /* Slightly lighter on hover */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Slightly more prominent shadow on hover */
         }
 
         .stat-number {
-            font-size: 1.8rem;
-            /* Reduced font size */
+            font-size: 2rem;
             font-weight: bold;
-            margin-bottom: 3px;
-            /* Reduced margin */
-            color: #7958d6;
-            /* Cypress purple for numbers */
+            margin-bottom: 5px;
+            color: #333333; /* Neutral dark color for numbers (not directly status) */
         }
 
         .stat-label {
-            color: #b0b0b0;
-            /* Lighter gray for labels */
-            font-size: 0.85rem;
-            /* Reduced font size */
+            color: #777777; /* Medium gray for labels */
+            font-size: 0.9rem;
         }
 
         /* Controls/Filters */
         .controls {
-            background: #373c47;
-            /* Darker gray for controls */
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            background: #FFFFFF; /* White background for controls */
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             display: flex;
             gap: 15px;
             flex-wrap: wrap;
             align-items: center;
+            border: 1px solid #EEEEEE; /* Subtle border */
         }
 
         .search-box,
         .filter-select {
-            padding: 10px 15px;
-            border: 1px solid #5a5e6b;
-            /* Lighter border for inputs */
-            border-radius: 6px;
+            padding: 12px 18px;
+            border: 1px solid #D0D0D0; /* Light gray border */
+            border-radius: 8px;
             font-size: 1rem;
             outline: none;
-            transition: border-color 0.2s ease, background 0.2s ease;
-            background-color: #424754;
-            /* Darker input background */
-            color: #f0f0f0;
-            /* Light text color */
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background-color: #F8F8F8; /* Very light gray input background */
+            color: #4A4A4A; /* Dark text color */
             appearance: none;
-            /* Remove default select arrow */
             -webkit-appearance: none;
             -moz-appearance: none;
-            background-image: url('data:image/svg+xml;utf8,<svg fill="%23b0b0b0" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
-            /* Custom arrow */
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%23777777" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
             background-repeat: no-repeat;
-            background-position: right 8px center;
+            background-position: right 12px center;
             background-size: 18px;
-            padding-right: 30px;
-            /* Space for custom arrow */
+            padding-right: 40px; /* Space for custom arrow */
+        }
+
+        .search-box::placeholder {
+            color: #AAAAAA; /* Lighter placeholder text */
         }
 
         .search-box:focus,
         .filter-select:focus {
-            border-color: #7958d6;
-            /* Cypress purple on focus */
-            background-color: #4c515f;
-            /* Slightly lighter on focus */
+            border-color: #4CAF50; /* Green focus border */
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2); /* Soft green glow */
+            background-color: #FFFFFF; /* White background on focus */
         }
 
-        /* Options within select to ensure dark background */
         .filter-select option {
-            background-color: #373c47;
-            color: #f0f0f0;
+            background-color: #FFFFFF; /* White for options */
+            color: #4A4A4A; /* Dark text for options */
         }
-
 
         .search-box {
             flex: 1;
-            min-width: 200px;
+            min-width: 220px;
         }
 
         /* Reports Grid and Cards */
         .reports-grid {
             display: grid;
-            gap: 30px;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); /* Adjusted min-width for more cards per row */
         }
 
         .report-card {
-            background: #373c47;
-            /* Darker gray for report cards */
-            border-radius: 8px;
+            background: #FFFFFF; /* White background for report cards */
+            border-radius: 10px;
             padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             transition: all 0.2s ease;
-            border-left: 5px solid #5a5e6b;
-            /* Default border color */
-            color: #f0f0f0;
-            /* Light text for report cards */
+            border-left: 5px solid #E0E0E0; /* Default neutral border */
+            color: #4A4A4A; /* Dark text for report cards */
             font-size: 0.95rem;
+            border: 1px solid #EEEEEE; /* Subtle overall border */
+            
+            /* Enhanced alignment for internal elements */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Pushes header to top, actions to bottom */
+            min-height: 200px; /* Ensure a consistent minimum height for cards */
         }
 
         .report-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            background: #424754;
-            /* Slightly lighter on hover */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
 
         /* Status-based left borders */
         .report-card.latest {
-            border-left-color: #6a4cd7;
-            /* Cypress purple for latest */
-            background: linear-gradient(135deg, #3f4452 0%, #373c47 100%);
-            /* Subtle gradient for latest */
+            border-left-color: #6a4cd7; /* Keeping a distinct "latest" highlight */
+            background: #FDFDFD; /* Slightly off-white for latest */
         }
 
         .report-card.success {
-            border-left-color: #4CAF50;
-            /* Green */
+            border-left-color: #4CAF50; /* Green */
         }
 
         .report-card.failure {
-            border-left-color: #e91e63;
-            /* Cypress pink for failure */
+            border-left-color: #E91E63; /* Red */
         }
 
         .report-card.broken {
-            border-left-color: #FF9800;
-            /* Orange */
+            border-left-color: #E91E63; /* Same as failure for simplicity */
         }
 
         .status-badge.unknown {
-            background: #9E9E9E;
+            background: #B0B0B0; /* Neutral gray for unknown */
+            color: white;
         }
 
         .report-header {
@@ -232,42 +203,31 @@
             align-items: flex-start; /* Aligns items to the top of the flex container */
             margin-bottom: 15px;
             font-size: 1.1rem;
+            width: 100%; /* Ensure it takes full width */
         }
 
         .report-title {
             font-size: 1.2rem;
             font-weight: bold;
-            color: #ffffff;
+            color: #333333; /* Darker text for titles */
             display: flex;
             flex-wrap: wrap; /* Allows items to wrap to the next line */
             align-items: center; /* Vertically centers items within their flex line */
-            gap: 8px; /* Space between date, run number, folder label, and star */
-            flex-grow: 1; /* Allows the title section to take up available space */
-            margin-right: 10px; /* Provides some space before the status badge */
+            gap: 8px;
+            flex-grow: 1;
+            margin-right: 10px;
         }
 
-        .folder-label {
-            background: #5a5e6b;
-            /* Darker gray for the folder label */
-            color: white;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
+        .folder-label,
         .run-number-badge {
-            background: linear-gradient(135deg, #7958d6 0%, #6a4cd7 100%);
-            /* Cypress purple gradient */
-            color: white;
+            background: #E0E0E0; /* Light gray for badges */
+            color: #4A4A4A; /* Dark text on light badge */
             padding: 4px 10px;
             border-radius: 12px;
             font-size: 0.8rem;
             font-weight: 600;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            text-shadow: none; /* Remove text shadow */
+            box-shadow: none; /* Remove badge shadow */
         }
 
         .status-badge {
@@ -277,42 +237,35 @@
             font-weight: bold;
             color: white;
             white-space: nowrap;
-            /* Prevent status badge text from wrapping */
             margin-left: auto;
-            /* Pushes the status badge to the far right */
         }
 
         .status-badge.success {
-            background: #4CAF50;
+            background: #4CAF50; /* Green */
         }
 
         .status-badge.failure {
-            background: #e91e63;
-            /* Cypress pink for badge */
-        }
-
-        .status-badge.unknown {
-            background: #9E9E9E;
+            background: #E91E63; /* Red */
         }
 
         .status-badge.broken {
-            background: #FF9800;
+            background: #E91E63; /* Red */
         }
 
         .report-meta {
-            color: #b0b0b0;
-            /* Lighter gray for meta */
+            color: #777777; /* Medium gray for meta info */
             font-size: 0.9rem;
             margin-bottom: 10px;
             font-weight: 500;
         }
 
-        /* NEW STYLES FOR ENV AND USER ROLE */
+        /* Environment and User Role badges (Neutral) */
         .badge-container {
             display: flex;
             gap: 8px;
-            margin: 12px 0;
+            margin: 12px 0; /* Add margin to separate from other elements */
             flex-wrap: wrap;
+            width: 100%; /* Ensure it takes full width */
         }
 
         .env-badge,
@@ -323,208 +276,134 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            background: #E0E0E0; /* Neutral light gray */
+            color: #4A4A4A; /* Dark text */
+            border: 1px solid #D0D0D0;
         }
-
-        /* Environment badges - adjusted for dark background */
-        .env-badge.dev {
-            background: #6200EE;
-            /* Deep Purple */
-            color: #E1BEE7;
-            border: 1px solid #7E57C2;
-        }
-
-        .env-badge.stage {
-            background: #FF6F00;
-            /* Amber */
-            color: #FFF3E0;
-            border: 1px solid #FFB300;
-        }
-
-        .env-badge.prod {
-            /* Changed to a lighter pink/red */
-            background: #823900;
-            /* Light Red/Pink A100 */
-            color: #6FFF00;
-            /* Green text for contrast on light background, or a dark grey */
-            border: 1px solid #FFCDD2;
-        }
-
-        .env-badge.unknown {
-            background: #616161;
-            /* Dark Gray */
-            color: #bdbdbd;
-            border: 1px solid #757575;
-        }
-
-        /* User Role badges - adjusted for dark background */
-        .role-badge.b2c {
-            /* Changed to a neutral light gray */
-            background: #e0e0e0;
-            color: #333;
-            /* Darker text for contrast on light background */
-            border: 1px solid #b0b0b0;
-        }
-
-        .role-badge.b2b {
-            background: #2979FF;
-            /* Blue A400 */
-            color: #E3F2FD;
-            border: 1px solid #82B1FF;
-        }
-
-        .role-badge.unknown {
-            background: #616161;
-            color: #bdbdbd;
-            border: 1px solid #757575;
+        
+        /* Specific env/role colors removed to adhere to two-color theme unless absolutely necessary */
+        .env-badge.dev, .env-badge.stage, .env-badge.prod, .env-badge.unknown,
+        .role-badge.b2c, .role-badge.b2b, .role-badge.unknown {
+            background: #E0E0E0; /* All become neutral light gray */
+            color: #4A4A4A;
+            border: 1px solid #D0D0D0;
         }
 
         .test-summary {
             display: flex;
             gap: 15px;
-        }
-
-        .report-card:hover .test-summary {
-            display: flex;
-            gap: 10px;
-            margin: 15px 0;
-            flex-wrap: wrap;
+            flex-wrap: wrap; /* Ensure it wraps on smaller screens */
+            margin-top: auto; /* Push to bottom before actions */
+            padding-top: 15px; /* Space from meta info */
+            border-top: 1px solid #F0F0F0; /* Subtle separator */
+            justify-content: space-around; /* Distribute items evenly */
         }
 
         .test-stat {
             text-align: center;
+            flex: 1 1 auto; /* Allow items to grow/shrink and wrap */
+            min-width: 70px; /* Minimum width for each stat */
         }
 
         .test-stat-number {
             font-size: 1.2rem;
             font-weight: bold;
-            color: #e0e0e0;
-            /* Light text for numbers */
+            color: #4A4A4A; /* Default to dark text */
         }
 
         .test-stat-label {
             font-size: 0.8rem;
-            color: #b0b0b0;
-            /* Lighter gray for labels */
+            color: #777777; /* Medium gray */
         }
 
         /* Specific colors for test summary stats */
-        .test-stat .test-stat-number[style*="color: #4CAF50"] {
-            color: #69F0AE !important;
+        .test-stat .test-stat-number[style*="color: rgb(76, 175, 80)"] { /* Matches #4CAF50 */
+            color: #4CAF50 !important; /* Green */
         }
-
-        /* Light green for passed */
-        .test-stat .test-stat-number[style*="color: #f44336"] {
-            color: #FF8A80 !important;
+        .test-stat .test-stat-number[style*="color: rgb(244, 67, 54)"] { /* Matches #f44336 */
+            color: #E91E63 !important; /* Red */
         }
-
-        /* Light red for failed */
-        .test-stat .test-stat-number[style*="color: #ff9800"] {
-            color: #FFD740 !important;
+        .test-stat .test-stat-number[style*="color: rgb(255, 152, 0)"] { /* Matches #ff9800 */
+            color: #E91E63 !important; /* Assign orange/skipped/broken to Red for the two-color theme */
         }
-
-        /* Light amber for skipped/broken */
+        .test-stat .test-stat-number[style*="color: rgb(255, 152, 0)"] { /* Matches #ff9800 - for broken also */
+            color: #E91E63 !important; /* Assign orange/skipped/broken to Red for the two-color theme */
+        }
 
 
         .report-actions {
-            /* Changed to flex for centering */
             display: flex;
             justify-content: center;
-            /* Center horizontally */
             align-items: center;
-            /* Center vertically if needed */
             margin-top: 15px;
             flex-wrap: wrap;
             gap: 10px;
-            /* Keep gap if there were multiple buttons */
+            width: 100%; /* Ensure it takes full width */
         }
 
         .btn {
-            padding: 8px 12px;
+            padding: 10px 15px;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
             font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         .btn-primary {
-            background: #7958d6;
-            /* Cypress purple */
+            background: #4CAF50; /* Primary button is green */
             color: white;
         }
 
-        .btn-secondary {
-            background: #5a5e6b;
-            /* Darker gray for secondary */
-            color: #f0f0f0;
-            /* Light text */
+        .btn-primary:hover {
+            background: #43A047; /* Slightly darker green on hover */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            transform: translateY(-1px);
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-            filter: brightness(1.1);
-            /* Slight brightness increase on hover */
+        .btn-secondary {
+            background: #E0E0E0; /* Secondary button is light gray */
+            color: #4A4A4A; /* Dark text */
+            border: 1px solid #D0D0D0;
         }
+        .btn-secondary:hover {
+            background: #D0D0D0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
 
         .no-results {
             text-align: center;
             padding: 40px;
-            color: #b0b0b0;
-            /* Light gray */
+            color: #777777;
             font-size: 1.1rem;
         }
 
         .loading {
             text-align: center;
             padding: 40px;
-            color: #ffffff;
-            /* White loading text */
+            color: #666666; /* Darker gray for loading text */
         }
 
-        @media (max-width: 768px) {
-            .reports-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .controls {
-                flex-direction: column;
-            }
-
-            .search-box {
-                width: 100%;
-            }
-
-            .report-title {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 6px;
-            }
-
-            .report-actions {
-                flex-direction: column;
-                /* Stack buttons on small screens */
-            }
-        }
-
-
-        /* CHART SECTION STYLES */
+        /* --- CHART SECTION STYLES (Adjusted for White Background) --- */
         .chart-section {
-            background: #373c47;
-            /* Darker gray background for chart section */
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            background: #FFFFFF; /* White background for chart section */
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); /* Softer shadow */
             margin-bottom: 30px;
             display: flex;
             flex-wrap: wrap;
             justify-content: space-around;
             gap: 20px;
+            border: 1px solid #EEEEEE; /* Subtle border */
         }
 
         .chart-header {
@@ -536,38 +415,37 @@
         }
 
         .chart-header h2 {
-            margin: 0;
-            color: #f0f0f0;
-            /* Light text for chart titles */
+            color: #333333; /* Dark text for chart titles */
         }
 
         .chart-filter-select {
-            padding: 8px 12px;
-            border: 1px solid #5a5e6b;
+            padding: 10px 15px;
+            border: 1px solid #D0D0D0; /* Light border */
             border-radius: 6px;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             outline: none;
             transition: border-color 0.2s ease, background 0.2s ease;
-            background-color: #424754;
-            color: #f0f0f0;
+            background-color: #F8F8F8; /* Very light input background */
+            color: #4A4A4A; /* Dark text color */
             appearance: none;
             -webkit-appearance: none;
             -moz-appearance: none;
-            background-image: url('data:image/svg+xml;utf8,<svg fill="%23b0b0b0" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%23777777" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
             background-repeat: no-repeat;
-            background-position: right 8px center;
+            background-position: right 10px center;
             background-size: 18px;
-            padding-right: 30px;
+            padding-right: 35px;
         }
 
         .chart-filter-select:focus {
-            border-color: #7958d6;
-            background-color: #4c515f;
+            border-color: #4CAF50; /* Green focus border */
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2); /* Soft green glow */
+            background-color: #FFFFFF; /* White background on focus */
         }
 
         .chart-filter-select option {
-            background-color: #373c47;
-            color: #f0f0f0;
+            background-color: #FFFFFF; /* White background for options */
+            color: #4A4A4A; /* Dark text for options */
         }
 
         .chart-container {
@@ -578,33 +456,19 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 10px;
-            /* Add some padding inside the container for charts */
+            padding: 15px;
+            background: #FDFDFD; /* Slightly off-white for chart area */
+            border: 1px solid #EEEEEE; /* Subtle border */
+            border-radius: 10px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.02); /* Very subtle inner shadow */
+        }
+        
+        /* Chart.js specific color adjustments for light background (handled in JS options) */
+        .chart-container canvas {
+            background-color: transparent;
         }
 
-        /* Adjust for two charts in a row as Top 5 is removed */
-        @media (min-width: 900px) {
-
-            /* Changed breakpoint to ensure two charts per row on larger screens */
-            .chart-container {
-                max-width: 48%;
-                /* Keep them side by side */
-            }
-        }
-
-        @media (max-width: 900px) {
-            .chart-container {
-                max-width: 100%;
-            }
-
-            .chart-header {
-                flex-direction: column;
-                align-items: center;
-                gap: 15px;
-            }
-        }
-
-        /* NEW SECTION: Top Failed Breakdown */
+        /* --- TOP FAILURES BREAKDOWN SECTION (Adjusted for White Background) --- */
         .top-failures-breakdown {
             display: flex;
             flex-wrap: wrap;
@@ -615,23 +479,21 @@
 
         .top-failures-card {
             flex: 1;
-            /* Distribute space evenly */
-            min-width: 350px;
-            /* Minimum width for each card */
+            min-width: 320px;
             max-width: 48%;
-            /* Max width for two cards per row */
-            background: #373c47;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            color: #f0f0f0;
+            background: #FFFFFF; /* White background */
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05); /* Softer shadow */
+            color: #4A4A4A; /* Dark text */
+            border: 1px solid #EEEEEE; /* Subtle border */
         }
 
         .top-failures-card h2 {
             text-align: center;
-            color: #ffffff;
-            margin-bottom: 15px;
-            font-size: 1.5rem;
+            color: #333333; /* Dark text for titles */
+            margin-bottom: 20px;
+            font-size: 1.6rem;
         }
 
         .top-failures-list {
@@ -644,9 +506,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            /* Subtle separator */
+            padding: 12px 0;
+            border-bottom: 1px solid #F0F0F0; /* Lighter separator */
         }
 
         .top-failures-item:last-child {
@@ -655,52 +516,69 @@
 
         .top-failures-name {
             flex-grow: 1;
-            font-size: 0.95em;
-            color: #e0e0e0;
+            font-size: 0.98em;
+            color: #4A4A4A; /* Dark text for names */
             overflow: hidden;
-            /* Hide overflow text */
             text-overflow: ellipsis;
-            /* Add ellipsis */
             white-space: nowrap;
-            /* Prevent wrapping */
-            padding-right: 10px;
-            /* Space between name and count */
+            padding-right: 15px;
         }
 
         .top-failures-name strong {
-            color: #ff8a80;
-            /* Light pink for failed item names */
+            color: #E91E63; /* Red for failed item names */
         }
 
         .top-failures-count {
-            background-color: #e91e63;
-            /* Cypress pink for count badge */
+            background-color: #E91E63; /* Red badge */
             color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8em;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85em;
             font-weight: bold;
-            min-width: 30px;
-            /* Ensure a minimum size */
+            min-width: 35px;
             text-align: center;
         }
 
         .no-top-failures {
             text-align: center;
-            padding: 15px;
-            color: #b0b0b0;
+            padding: 20px;
+            color: #777777; /* Medium gray for no results */
             font-style: italic;
         }
 
+        /* Responsive adjustments */
         @media (max-width: 768px) {
-            .top-failures-breakdown {
-                flex-direction: column;
-                /* Stack cards on small screens */
+            body {
+                padding: 15px;
             }
-
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            .header p {
+                font-size: 0.85rem;
+            }
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            .controls {
+                flex-direction: column;
+            }
+            .search-box {
+                width: 100%;
+                min-width: unset;
+            }
+            .report-title {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            .report-actions {
+                flex-direction: column;
+            }
+            .chart-container,
             .top-failures-card {
                 max-width: 100%;
-                /* Full width when stacked */
+                min-width: unset;
             }
         }
     </style>
@@ -747,13 +625,13 @@
 
         <div class="top-failures-breakdown">
             <div class="top-failures-card">
-                <h2>Top 10 Failing Test Files</h2>
+                <h2>Top 5 Failing Test Files</h2>
                 <ul id="topFailingFilesList" class="top-failures-list">
                     <li class="no-top-failures">Loading...</li>
                 </ul>
             </div>
             <div class="top-failures-card">
-                <h2>Top 10 Error Reasons</h2>
+                <h2>Top 5 Error Reasons</h2>
                 <ul id="topErrorReasonsList" class="top-failures-list">
                     <li class="no-top-failures">Loading...</li>
                 </ul>
@@ -816,11 +694,18 @@
 
             async loadReports() {
                 try {
-                    const response = await fetch('./reports.json');
+                    // Construct the absolute URL for reports.json
+                    const reportsJsonUrl = new URL('reports.json', window.location.href).href;
+                    const response = await fetch(reportsJsonUrl);
                     const data = await response.json();
                     this.reports = data.reports.sort((a, b) =>
                         new Date(b.dateFormatted) - new Date(a.dateFormatted)
                     );
+
+                    // Process each report to extract and store the folderName
+                    this.reports.forEach(report => {
+                        report.folderName = this.getFolderNameFromReport(report);
+                    });
 
                     if (this.reports.length > 0) {
                         this.reports[0].isLatest = true;
@@ -832,6 +717,41 @@
                     document.getElementById('loading').innerHTML = 'Error loading reports or reports.json not found. Check console for details.';
                 }
             }
+
+            // Helper function to extract folder name
+            getFolderNameFromReport(report) {
+                let folderName = 'Unknown'; // Default value
+
+                // Prioritize 'allTestsDetails' if available
+                if (report.allTestsDetails && report.allTestsDetails.length > 0) {
+                    const firstTestFile = report.allTestsDetails[0].testFile;
+                    if (firstTestFile) {
+                        const parts = firstTestFile.split('/');
+                        // Check if the path starts with 'tests/' or similar
+                        // Example: 'tests/smoke/my-test.spec.ts' -> 'smoke'
+                        // Example: 'tests/my-test.spec.ts' -> 'my-test'
+                        // Example: 'another_suite/my-test.spec.ts' -> 'another_suite'
+                        if (parts.length >= 2 && parts[0].toLowerCase() === 'tests') {
+                            folderName = parts[1]; // Get the folder name after 'tests/'
+                        } else if (parts.length > 1) {
+                            folderName = parts[0]; // Get the first part if no 'tests/' (e.g., 'another_suite')
+                        } else {
+                            // If it's just a file name (e.g., 'my-test.spec.ts'), use the file name without extension
+                            folderName = firstTestFile.replace(/\.spec\.ts$/, '').replace(/\.js$/, '');
+                        }
+                    }
+                } else if (report.path) {
+                    // Fallback to extract from report.path if allTestsDetails is empty or unavailable
+                    // The 'path' typically looks like 'reports/20250624_231641/'
+                    const pathParts = report.path.split('/').filter(Boolean); // Filter Boolean removes empty strings
+                    if (pathParts.length > 0) {
+                        // The last part is usually the timestamp ID from the GH Actions artifact
+                        folderName = pathParts[pathParts.length - 1];
+                    }
+                }
+                return folderName;
+            }
+
 
             setupEventListeners() {
                 document.getElementById('search').addEventListener('input', () => this.filterReports());
@@ -860,6 +780,7 @@
                         (report.runNumber && report.runNumber.toString().includes(search)) ||
                         (report.environment && report.environment.toLowerCase().includes(search)) ||
                         (report.userRole && report.userRole.toLowerCase().includes(search)) ||
+                        (report.folderName && report.folderName.toLowerCase().includes(search)) || // Added folderName to search
                         (report.testSummary && JSON.stringify(report.testSummary).toLowerCase().includes(search));
 
                     const matchesStatus = !statusFilter || report.status === statusFilter;
@@ -918,16 +839,24 @@
             }
 
             formatTimestamp(timestamp) {
-                if (!timestamp) return 'N/A';
+                try {
+                    const date = new Date(timestamp);
+                    if (isNaN(date.getTime())) {
+                        return "Invalid Date";
+                    }
 
-                const date = new Date(timestamp);
-                return date.toLocaleString('en-US', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                });
+                    return date.toLocaleString('en-US', {
+                        year: '2-digit', // Changed to '2-digit'
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                } catch (e) {
+                    console.error("Error formatting date:", e, dateString);
+                    return "Invalid Date";
+                }
             }
 
             formatDateTimeRange(report) {
@@ -1014,30 +943,7 @@
                         `<span class="run-number-badge">#${report.runNumber}</span>` :
                         '';
 
-                    // Extract the folder name from the testFile, or fallback to 'path' if needed
-                    let folderName = 'Unknown Folder';
-                    if (report.executionMetadata && report.executionMetadata.failedTestsDetails && report.executionMetadata.failedTestsDetails.length > 0) {
-                        const firstTestFile = report.executionMetadata.failedTestsDetails[0].testFile;
-                        if (firstTestFile) {
-                            const parts = firstTestFile.split('/');
-                            if (parts.length > 1) {
-                                folderName = parts[0]; // Gets 'smoke'
-                            } else {
-                                folderName = firstTestFile.replace(/\.spec\.js$/, ''); // Fallback for root level spec files
-                            }
-                        }
-                    } else if (report.path) {
-                        // Fallback to extract from report.path if no failedTestsDetails or no testFile
-                        // This extracts the last non-empty part of the path, which might be the timestamp ID
-                        const pathParts = report.path.split('/');
-                        for (let i = pathParts.length - 1; i >= 0; i--) {
-                            if (pathParts[i] !== '') {
-                                folderName = pathParts[i];
-                                break;
-                            }
-                        }
-                    }
-                    const folderLabel = `<span class="folder-label">📁 ${folderName}</span>`;
+                    const folderLabel = `<span class="folder-label">📁 ${report.folderName || 'Unknown'}</span>`;
 
 
                     return `
@@ -1096,15 +1002,15 @@
                                 <div class="test-stat-label">Passed</div>
                             </div>
                             <div class="test-stat">
-                                <div class="test-stat-number" style="color: #f44336">${data.statistic.failed || 0}</div>
+                                <div class="test-stat-number" style="color: #E91E63">${data.statistic.failed || 0}</div>
                                 <div class="test-stat-label">Failed</div>
                             </div>
                             <div class="test-stat">
-                                <div class="test-stat-number" style="color: #ff9800">${data.statistic.skipped || 0}</div>
+                                <div class="test-stat-number" style="color: #E91E63">${data.statistic.skipped || 0}</div>
                                 <div class="test-stat-label">Skipped</div>
                             </div>
                             <div class="test-stat">
-                                <div class="test-stat-number" style="color: #FF9800">${data.statistic.broken || 0}</div>
+                                <div class="test-stat-number" style="color: #E91E63">${data.statistic.broken || 0}</div>
                                 <div class="test-stat-label">Broken</div>
                             </div>
                             <div class="test-stat">
@@ -1132,8 +1038,7 @@
                         day: '2-digit',
                         hour: '2-digit',
                         minute: '2-digit',
-                        hour12: false,
-                        timeZone: 'America/Sao_Paulo'
+                        second: '2-digit'
                     });
                 } catch (e) {
                     console.error("Error formatting date:", e, dateString);
@@ -1143,11 +1048,27 @@
 
             copyLink(path) {
                 const fullUrl = window.location.origin + window.location.pathname.replace('/index.html', '') + '/' + path;
-                navigator.clipboard.writeText(fullUrl).then(() => {
-                    alert('Link copied to clipboard!');
-                }).catch(() => {
-                    alert('Could not copy link');
-                });
+                document.execCommand('copy'); // Use document.execCommand for clipboard operations within iframe
+                const messageBox = document.createElement('div');
+                messageBox.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background-color: #4A4A4A; /* Dark gray for message box */
+                    color: white;
+                    padding: 15px 30px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+                    z-index: 1000;
+                    font-family: sans-serif;
+                    font-size: 1rem;
+                `;
+                messageBox.textContent = 'Link copied to clipboard!';
+                document.body.appendChild(messageBox);
+                setTimeout(() => {
+                    document.body.removeChild(messageBox);
+                }, 2000); // Remove after 2 seconds
             }
 
             // Centralized chart and top failures update function
@@ -1259,16 +1180,14 @@
                         datasets: [{
                             label: 'Passed %',
                             data: passedPercentages,
-                            backgroundColor: '#6a4cd7',
-                            /* Cypress purple for Passed */
-                            borderColor: '#5b3fc0',
+                            backgroundColor: '#4CAF50', /* Green */
+                            borderColor: '#43A047',
                             borderWidth: 1
                         }, {
                             label: 'Failed %',
                             data: failedPercentages,
-                            backgroundColor: '#e91e63',
-                            /* Cypress pink for Failed */
-                            borderColor: '#c2185b',
+                            backgroundColor: '#E91E63', /* Red */
+                            borderColor: '#C2185B',
                             borderWidth: 1
                         }]
                     },
@@ -1281,13 +1200,13 @@
                                 title: {
                                     display: true,
                                     text: 'Date',
-                                    color: '#b0b0b0' /* Lighter gray for axis titles */
+                                    color: '#777777' /* Medium gray for axis titles on light background */
                                 },
                                 ticks: {
-                                    color: '#b0b0b0' /* Lighter gray for ticks */
+                                    color: '#777777' /* Medium gray for ticks on light background */
                                 },
                                 grid: {
-                                    color: 'rgba(255, 255, 255, 0.08)' /* Light grid lines */
+                                    color: '#EEEEEE' /* Light grid lines on light background */
                                 }
                             },
                             y: {
@@ -1297,16 +1216,16 @@
                                 title: {
                                     display: true,
                                     text: 'Percentage (%)',
-                                    color: '#b0b0b0'
+                                    color: '#777777'
                                 },
                                 ticks: {
                                     callback: function(value) {
                                         return value + '%';
                                     },
-                                    color: '#b0b0b0'
+                                    color: '#777777'
                                 },
                                 grid: {
-                                    color: 'rgba(255, 255, 255, 0.08)'
+                                    color: '#EEEEEE'
                                 }
                             }
                         },
@@ -1314,36 +1233,19 @@
                             title: {
                                 display: true,
                                 text: 'Passed vs Failed Percentage by Date',
-                                color: '#f0f0f0' /* Light title color */
+                                color: '#333333' /* Dark title color for light background */
                             },
                             legend: {
                                 display: true,
-                                /* Changed to true for clarity with new colors */
                                 labels: {
-                                    color: '#f0f0f0' /* Light text for legend labels */
+                                    color: '#4A4A4A' /* Dark text for legend labels on light background */
                                 }
                             },
                             tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        label += context.raw.toFixed(2) + '%';
-                                        return label;
-                                    },
-                                    footer: function(tooltipItems) {
-                                        return 'Total: 100%';
-                                    }
-                                },
-                                backgroundColor: '#424754',
-                                /* Dark tooltip background */
-                                titleColor: '#f0f0f0',
-                                /* Light tooltip title */
-                                bodyColor: '#f0f0f0',
-                                /* Light tooltip body */
-                                borderColor: '#5a5e6b',
+                                backgroundColor: '#4A4A4A', /* Dark gray tooltip background */
+                                titleColor: 'white',
+                                bodyColor: 'white',
+                                borderColor: '#777777',
                                 borderWidth: 1
                             }
                         }
@@ -1393,19 +1295,15 @@
                         datasets: [{
                             label: 'Passed',
                             data: passedData,
-                            borderColor: '#6a4cd7',
-                            /* Cypress purple */
-                            backgroundColor: 'rgba(106, 76, 215, 0.2)',
-                            /* Translucent Cypress purple */
+                            borderColor: '#4CAF50', /* Green */
+                            backgroundColor: 'rgba(76, 175, 80, 0.2)', /* Translucent green */
                             tension: 0.3,
                             fill: true
                         }, {
                             label: 'Failed',
                             data: failedData,
-                            borderColor: '#e91e63',
-                            /* Cypress pink */
-                            backgroundColor: 'rgba(233, 30, 99, 0.2)',
-                            /* Translucent Cypress pink */
+                            borderColor: '#E91E63', /* Red */
+                            backgroundColor: 'rgba(233, 30, 99, 0.2)', /* Translucent red */
                             tension: 0.3,
                             fill: true
                         }]
@@ -1419,26 +1317,26 @@
                                 title: {
                                     display: true,
                                     text: 'Test Count',
-                                    color: '#b0b0b0'
+                                    color: '#777777'
                                 },
                                 ticks: {
-                                    color: '#b0b0b0'
+                                    color: '#777777'
                                 },
                                 grid: {
-                                    color: 'rgba(255, 255, 255, 0.08)'
+                                    color: '#EEEEEE'
                                 }
                             },
                             x: {
                                 title: {
                                     display: true,
                                     text: 'Date',
-                                    color: '#b0b0b0'
+                                    color: '#777777'
                                 },
                                 ticks: {
-                                    color: '#b0b0b0'
+                                    color: '#777777'
                                 },
                                 grid: {
-                                    color: 'rgba(255, 255, 255, 0.08)'
+                                    color: '#EEEEEE'
                                 }
                             }
                         },
@@ -1446,18 +1344,18 @@
                             title: {
                                 display: true,
                                 text: 'Passed/Failed Trend Over Time',
-                                color: '#f0f0f0'
+                                color: '#333333'
                             },
                             legend: {
                                 labels: {
-                                    color: '#f0f0f0' /* Light text for legend labels */
+                                    color: '#4A4A4A' /* Dark text for legend labels */
                                 }
                             },
                             tooltip: {
-                                backgroundColor: '#424754',
-                                titleColor: '#f0f0f0',
-                                bodyColor: '#f0f0f0',
-                                borderColor: '#5a5e6b',
+                                backgroundColor: '#4A4A4A',
+                                titleColor: 'white',
+                                bodyColor: 'white',
+                                borderColor: '#777777',
                                 borderWidth: 1
                             }
                         }
@@ -1501,7 +1399,7 @@
                 // Sort and render Top 10 Failing Test Files
                 const sortedFileFailures = Object.entries(fileFailures)
                     .sort(([, countA], [, countB]) => countB - countA)
-                    .slice(0, 10); // Top 10
+                    .slice(0, 5); // Top 5
 
                 if (sortedFileFailures.length > 0) {
                     sortedFileFailures.forEach(([fileName, count]) => {
@@ -1520,7 +1418,7 @@
                 // Sort and render Top 10 Error Reasons
                 const sortedErrorReasons = Object.entries(errorReasons)
                     .sort(([, countA], [, countB]) => countB - countA)
-                    .slice(0, 10); // Top 10
+                    .slice(0, 5); // Top 5
 
                 if (sortedErrorReasons.length > 0) {
                     sortedErrorReasons.forEach(([reason, count]) => {

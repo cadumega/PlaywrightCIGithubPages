@@ -1,0 +1,10 @@
+[
+  {
+    "name": "test",
+    "fullName": "tickets/1234.spec.js:2:5",
+    "status": "passed",
+    "errorMessage": "N/A",
+    "stackTrace": "N/A",
+    "testFile": "tickets/1234.spec.js"
+  }
+]
