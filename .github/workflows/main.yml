@@ -3,11 +3,11 @@ name: Playwright Tests with Allure Report
 on:
   push:
     branches:
-      - master
+      - main
       - develop
   pull_request:
     branches:
-      - master
+      - main
       - develop
   workflow_dispatch:
     inputs:
@@ -32,8 +32,17 @@ on:
         options:
           - b2c
           - b2b
+      test_suite:
+        description: "Test suite to run"
+        required: false
+        default: "tickets"
+        type: choice
+        options:
+          - smoke
+          - regression
+          - tickets
   schedule:
-    - cron: "0 10,20 * * *"
+    - cron: "0 10 * * *"
 
 env:
   NODE_VERSION: "20"
@@ -78,7 +87,7 @@ jobs:
 
           if [ -n "${{ github.event.inputs.environment }}" ]; then
             CURRENT_ENV="${{ github.event.inputs.environment }}"
-          elif [ "${{ github.ref }}" == "refs/heads/master" ]; then
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
             CURRENT_ENV="stage"
           elif [ "${{ github.ref }}" == "refs/heads/develop" ]; then
             CURRENT_ENV="stage"
@@ -136,15 +145,24 @@ jobs:
         id: test-execution
         run: |
           TEST_FILES="${{ github.event.inputs.test_files }}"
+          TEST_SUITE="${{ github.event.inputs.test_suite || 'regression' }}"
 
           if [ -n "$TEST_FILES" ]; then
             echo "🎯 Running specific tests: $TEST_FILES"
             npx playwright test $TEST_FILES --reporter=dot,allure-playwright
           else
-            echo "🔄 Running default test suite..."
-            npx playwright test tests/smoke --reporter=dot,allure-playwright
+            echo "🔄 Running default test suite: $TEST_SUITE"
+            case $TEST_SUITE in
+              "smoke"|"regression"|"tickets")
+                echo "🔄 Running default test suite from tests/$TEST_SUITE folder..."
+                npx playwright test tests/$TEST_SUITE --reporter=dot,allure-playwright
+                ;;
+              *)
+                echo "⚠️ Invalid test suite '$TEST_SUITE', defaulting to regression..."
+                npx playwright test tests/regression --reporter=dot,allure-playwright
+                ;;
+            esac
           fi
-        continue-on-error: true
 
       - name: Calculate duration and record end time
         id: calculate-duration
@@ -163,78 +181,81 @@ jobs:
 
           echo "Test execution took: ${DURATION} seconds"
 
-      - name: Extract Failed Tests Details
+      - name: Extract All Test Run Details
         if: always()
         run: |
           mkdir -p allure-results
 
-          echo "🔍 Extracting failed test details..."
+          echo "🔍 Extracting all test details..."
 
-          # Criar arquivo JSON com detalhes dos testes falhos
+          # Initialize JSON files for both all tests and failed/broken tests
+          echo '[]' > allure-results/all-tests-details.json
           echo '[]' > allure-results/failed-tests-details.json
 
           if [ -d "allure-results" ]; then
+            ALL_TESTS_JSON='[]'
             FAILED_TESTS_JSON='[]'
             
-            # Processar arquivos de resultado do Allure
+            # Process Allure result files
             for test_file in allure-results/*-result.json; do
               if [ -f "$test_file" ]; then
                 echo "📄 Processing: $test_file"
                 
-                # Extrair informações do teste
+                # Extract common test information
                 TEST_STATUS=$(jq -r '.status // "unknown"' "$test_file" 2>/dev/null || echo "unknown")
+                TEST_NAME=$(jq -r '.name // "N/A"' "$test_file" 2>/dev/null || echo "N/A")
+                TEST_FULL_NAME=$(jq -r '.fullName // "N/A"' "$test_file" 2>/dev/null || echo "N/A")
+                ERROR_MESSAGE=$(jq -r '.statusDetails.message // "N/A"' "$test_file" 2>/dev/null || echo "N/A")
+                STACK_TRACE=$(jq -r '.statusDetails.trace // "N/A"' "$test_file" 2>/dev/null || echo "N/A")
                 
+                # Extract test file path from labels (suite or parentSuite)
+                TEST_FILE_PATH=$(jq -r '.labels[] | select(.name == "suite") | .value' "$test_file" 2>/dev/null || echo "N/A")
+                if [ "$TEST_FILE_PATH" = "N/A" ]; then
+                  TEST_FILE_PATH=$(jq -r '.labels[] | select(.name == "parentSuite") | .value' "$test_file" 2>/dev/null || echo "N/A")
+                fi
+                
+                # Create JSON entry for the current test
+                TEST_ENTRY=$(jq -n \
+                  --arg name "$TEST_NAME" \
+                  --arg fullName "$TEST_FULL_NAME" \
+                  --arg status "$TEST_STATUS" \
+                  --arg message "$ERROR_MESSAGE" \
+                  --arg trace "$STACK_TRACE" \
+                  --arg file "$TEST_FILE_PATH" \
+                  '{
+                    name: $name,
+                    fullName: $fullName,
+                    status: $status,
+                    errorMessage: $message,
+                    stackTrace: $trace,
+                    testFile: $file
+                  }')
+                
+                # Add to the array of all tests
+                ALL_TESTS_JSON=$(echo "$ALL_TESTS_JSON" | jq --argjson entry "$TEST_ENTRY" '. + [$entry]')
+                
+                # If failed or broken, add to failed tests array as well
                 if [ "$TEST_STATUS" = "failed" ] || [ "$TEST_STATUS" = "broken" ]; then
-                  TEST_NAME=$(jq -r '.name // "N/A"' "$test_file" 2>/dev/null || echo "N/A")
-                  TEST_FULL_NAME=$(jq -r '.fullName // "N/A"' "$test_file" 2>/dev/null || echo "N/A")
-                  
-                  # Extrair mensagem de erro de forma mais robusta
-                  ERROR_MESSAGE=$(jq -r '.statusDetails.message // "N/A"' "$test_file" 2>/dev/null || echo "N/A")
-                  
-                  # Extrair stack trace se disponível
-                  STACK_TRACE=$(jq -r '.statusDetails.trace // "N/A"' "$test_file" 2>/dev/null || echo "N/A")
-                  
-                  # Extrair labels para obter informações do arquivo
-                  TEST_FILE_PATH=$(jq -r '.labels[] | select(.name == "suite") | .value' "$test_file" 2>/dev/null || echo "N/A")
-                  
-                  if [ "$TEST_FILE_PATH" = "N/A" ]; then
-                    TEST_FILE_PATH=$(jq -r '.labels[] | select(.name == "parentSuite") | .value' "$test_file" 2>/dev/null || echo "N/A")
-                  fi
-                  
-                  # Criar entrada JSON para o teste falho
-                  FAILED_TEST_ENTRY=$(jq -n \
-                    --arg name "$TEST_NAME" \
-                    --arg fullName "$TEST_FULL_NAME" \
-                    --arg status "$TEST_STATUS" \
-                    --arg message "$ERROR_MESSAGE" \
-                    --arg trace "$STACK_TRACE" \
-                    --arg file "$TEST_FILE_PATH" \
-                    '{
-                      name: $name,
-                      fullName: $fullName,
-                      status: $status,
-                      errorMessage: $message,
-                      stackTrace: $trace,
-                      testFile: $file
-                    }')
-                  
-                  # Adicionar ao array de testes falhos
-                  FAILED_TESTS_JSON=$(echo "$FAILED_TESTS_JSON" | jq --argjson entry "$FAILED_TEST_ENTRY" '. + [$entry]')
-                  
+                  FAILED_TESTS_JSON=$(echo "$FAILED_TESTS_JSON" | jq --argjson entry "$TEST_ENTRY" '. + [$entry]')
                   echo "❌ Failed test found: $TEST_NAME in $TEST_FILE_PATH"
                 fi
               fi
             done
             
-            # Salvar detalhes dos testes falhos
+            # Save the comprehensive details of all tests
+            echo "$ALL_TESTS_JSON" > allure-results/all-tests-details.json
             echo "$FAILED_TESTS_JSON" > allure-results/failed-tests-details.json
-            
-            # Debug: mostrar conteúdo
+
+            # Debug: show content
+            echo "🔍 All tests details:"
+            cat allure-results/all-tests-details.json | jq .
             echo "🔍 Failed tests details:"
             cat allure-results/failed-tests-details.json | jq .
             
-            # Contar testes falhos
+            # Count tests
+            ALL_COUNT=$(echo "$ALL_TESTS_JSON" | jq 'length')
             FAILED_COUNT=$(echo "$FAILED_TESTS_JSON" | jq 'length')
+            echo "📊 Total tests processed: $ALL_COUNT"
             echo "📊 Total failed tests: $FAILED_COUNT"
           else
             echo "⚠️ No allure-results directory found"
@@ -270,7 +291,12 @@ jobs:
 
           echo "✅ Final values - ENV: '$FINAL_ENV', USER_ROLE: '$FINAL_USER_ROLE'"
 
-          # Carregar detalhes dos testes falhos
+          # Load details for all tests and failed tests
+          ALL_TESTS_DETAILS='[]'
+          if [ -f "allure-results/all-tests-details.json" ]; then
+            ALL_TESTS_DETAILS=$(cat allure-results/all-tests-details.json)
+          fi
+
           FAILED_TESTS_DETAILS='[]'
           if [ -f "allure-results/failed-tests-details.json" ]; then
             FAILED_TESTS_DETAILS=$(cat allure-results/failed-tests-details.json)
@@ -299,11 +325,13 @@ jobs:
             "branch": "${{ github.ref_name }}",
             "eventName": "${{ github.event_name }}",
             "workflowName": "${{ github.workflow }}",
-            "failedTestsDetails": $FAILED_TESTS_DETAILS
+            "failedTestsDetails": $FAILED_TESTS_DETAILS,
+            "allTestsDetails": $ALL_TESTS_DETAILS
           }
           EOF
 
           # Create execution metadata for backward compatibility
+          # This one is kept for older dashboard versions if needed, also including new field
           cat > allure-results/execution-metadata.json << EOF
           {
             "environment": "$FINAL_ENV",
@@ -317,11 +345,10 @@ jobs:
             "ref": "${{ github.ref }}",
             "actor": "${{ github.actor }}",
             "timestamp": "${{ steps.timestamp.outputs.timestamp }}",
-            "failedTestsDetails": $FAILED_TESTS_DETAILS
+            "failedTestsDetails": $FAILED_TESTS_DETAILS,
+            "allTestsDetails": $ALL_TESTS_DETAILS
           }
           EOF
-
-          echo "✅ JSON metadata files created"
 
           # Verify files were created and show content
           echo "🔍 Verification - Files in allure-results:"
@@ -368,6 +395,13 @@ jobs:
             else
               echo "❌ failed-tests-details.json missing"
             fi
+
+            if [ -f "allure-results/all-tests-details.json" ]; then
+              echo "✅ all-tests-details.json exists"
+              echo "📊 Total tests count: $(cat allure-results/all-tests-details.json | jq 'length')"
+            else
+              echo "❌ all-tests-details.json missing"
+            fi
           else
             echo "❌ No allure results found"
             exit 1
@@ -405,6 +439,12 @@ jobs:
             echo "✅ Copied failed-tests-details.json to report directory"
           fi
 
+          # New: Copy all-tests-details.json to report directory
+          if [ -f "allure-results/all-tests-details.json" ]; then
+            cp allure-results/all-tests-details.json allure-report/
+            echo "✅ Copied all-tests-details.json to report directory"
+          fi
+
           echo "🔍 Final allure-report directory contents:"
           ls -la allure-report/
         if: always()
@@ -424,7 +464,7 @@ jobs:
     name: Update Reports Index
     runs-on: ubuntu-latest
     needs: test
-    if: always() && (github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch')
+    if: always() && (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
 
     permissions:
       contents: write
@@ -462,7 +502,7 @@ jobs:
           echo "🔍 Checking for metadata files in multiple locations:"
 
           # Check in allure-report directory (where we copied them)
-          for file in test-execution-info.json execution-metadata.json env.txt user_role.txt failed-tests-details.json; do
+          for file in test-execution-info.json execution-metadata.json env.txt user_role.txt failed-tests-details.json all-tests-details.json; do
             if [ -f "downloaded-report/allure-report/$file" ]; then
               echo "✅ Found $file in allure-report/"
             else
@@ -471,7 +511,7 @@ jobs:
           done
 
           # Check in allure-results directory (original location)
-          for file in test-execution-info.json execution-metadata.json env.txt user_role.txt failed-tests-details.json; do
+          for file in test-execution-info.json execution-metadata.json env.txt user_role.txt failed-tests-details.json all-tests-details.json; do
             if [ -f "downloaded-report/allure-results/$file" ]; then
               echo "✅ Found $file in allure-results/"
             else
@@ -502,7 +542,7 @@ jobs:
               echo "🔍 Checking source directory: $source_dir"
               
               # Copy metadata files if they exist in this source
-              for file in test-execution-info.json execution-metadata.json env.txt user_role.txt failed-tests-details.json; do
+              for file in test-execution-info.json execution-metadata.json env.txt user_role.txt failed-tests-details.json all-tests-details.json; do
                 if [ -f "$source_dir/$file" ]; then
                   cp "$source_dir/$file" "$REPORT_DIR/$file"
                   echo "✅ Copied $file from $source_dir"
@@ -516,7 +556,7 @@ jobs:
 
           # Verify metadata files are present
           echo "🔍 Metadata files verification:"
-          for file in test-execution-info.json execution-metadata.json env.txt user_role.txt failed-tests-details.json; do
+          for file in test-execution-info.json execution-metadata.json env.txt user_role.txt failed-tests-details.json all-tests-details.json; do
             if [ -f "$REPORT_DIR/$file" ]; then
               echo "✅ $file present in report directory"
             else
@@ -555,7 +595,10 @@ jobs:
                 summary_data=$(cat "reports/$dir/widgets/summary.json" 2>/dev/null || echo '{}')
                 report_status="unknown"
                 test_summary_json="null"
+                
+                # Default to empty arrays for JSON parsing safety
                 failed_tests_details="[]"
+                all_tests_details="[]" # Initialize for all tests
 
                 if [ -n "$summary_data" ] && [ "$summary_data" != "{}" ]; then
                   test_summary_json=$(echo "$summary_data" | jq -c . 2>/dev/null || echo "null")
@@ -583,10 +626,26 @@ jobs:
                   echo "✅ Loaded failed tests details from execution-metadata.json"
                 fi
 
-                # Ensure failed_tests_details is valid JSON
+                # New: Load all tests details from the correct locations
+                if [ -f "reports/$dir/all-tests-details.json" ]; then
+                  all_tests_details=$(cat "reports/$dir/all-tests-details.json" 2>/dev/null || echo "[]")
+                  echo "✅ Loaded all tests details from all-tests-details.json"
+                elif [ -f "reports/$dir/test-execution-info.json" ]; then
+                  all_tests_details=$(cat "reports/$dir/test-execution-info.json" | jq -r '.allTestsDetails // "[]"' 2>/dev/null || echo "[]")
+                  echo "✅ Loaded all tests details from test-execution-info.json (new field)"
+                elif [ -f "reports/$dir/execution-metadata.json" ]; then # For backward compat if new field added to old meta
+                  all_tests_details=$(cat "reports/$dir/execution-metadata.json" | jq -r '.allTestsDetails // "[]"' 2>/dev/null || echo "[]")
+                  echo "✅ Loaded all tests details from execution-metadata.json (new field)"
+                fi
+
+                # Ensure JSON arrays are valid
                 if ! echo "$failed_tests_details" | jq . >/dev/null 2>&1; then
                   echo "⚠️ Invalid JSON in failed tests details, resetting to empty array"
                   failed_tests_details="[]"
+                fi
+                if ! echo "$all_tests_details" | jq . >/dev/null 2>&1; then
+                  echo "⚠️ Invalid JSON in all tests details, resetting to empty array"
+                  all_tests_details="[]"
                 fi
 
                 CURRENT_ENV="unknown"
@@ -625,7 +684,7 @@ jobs:
                 END_TIME_META=$(echo "$execution_metadata" | jq -r '.endTime // "N/A"' 2>/dev/null || echo "N/A")
                 DURATION_META=$(echo "$execution_metadata" | jq -r '.duration // "N/A"' 2>/dev/null || echo "N/A")
 
-                # Create JSON entry with proper failed tests details
+                # Create JSON entry with proper failed and all tests details
                 JSON_ENTRY=$(jq -n \
                   --arg id "$dir" \
                   --arg timestamp "$timestamp_dir" \
@@ -642,6 +701,7 @@ jobs:
                   --arg endTime "$END_TIME_META" \
                   --arg duration "$DURATION_META" \
                   --argjson failedTestsDetails "$failed_tests_details" \
+                  --argjson allTestsDetails "$all_tests_details" \
                   '{
                     id: $id,
                     timestamp: $timestamp,
@@ -657,15 +717,17 @@ jobs:
                     startTime: $startTime,
                     endTime: $endTime,
                     duration: $duration,
-                    failedTestsDetails: $failedTestsDetails
+                    failedTestsDetails: $failedTestsDetails,
+                    allTestsDetails: $allTestsDetails
                   }')
                 
                 echo "$JSON_ENTRY" >> reports.json
                 REPORTS_COUNT=$((REPORTS_COUNT + 1))
                 
-                # Debug: show failed tests count
+                # Debug: show failed and all tests count
                 FAILED_COUNT=$(echo "$failed_tests_details" | jq 'length' 2>/dev/null || echo "0")
-                echo "📊 Report $dir has $FAILED_COUNT failed tests"
+                ALL_COUNT=$(echo "$all_tests_details" | jq 'length' 2>/dev/null || echo "0")
+                echo "📊 Report $dir has $FAILED_COUNT failed tests and $ALL_COUNT total tests"
               fi
             done
           fi
@@ -698,9 +760,9 @@ jobs:
     name: Cleanup Old Reports
     runs-on: ubuntu-latest
     # Este job só precisa ser executado se o job 'create-index' for bem-sucedido ou falhar,
-    # e apenas no branch 'master' para evitar limpezas desnecessárias em branches de desenvolvimento.
+    # e apenas no branch 'main' para evitar limpezas desnecessárias em branches de desenvolvimento.
     needs: [test, create-index]
-    if: always() && github.ref == 'refs/heads/master'
+    if: always() && github.ref == 'refs/heads/main'
 
     steps:
       - name: Delete old test run artifacts
@@ -717,11 +779,12 @@ jobs:
             });
 
             // Filtra os artefatos que são relatórios de teste (começam com 'test-run-'),
-            // ordena do mais recente para o mais antigo e pega os que estão além dos 50 mais recentes.
+            // ordena do mais recente para o mais antigo e pega os que estão além dos 2 mais recentes.
+            // Eu mudei de 50 para 2 para testar, você pode ajustar para o número de artefatos que deseja manter.
             const testArtifactsToDelete = artifacts.data.artifacts
               .filter(a => a.name.startsWith('test-run-')) // Filtra apenas seus artefatos de relatório
               .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) // Ordena por data de criação (mais recente primeiro)
-              .slice(2); // Pega todos os artefatos a partir do 51º (ou seja, os mais antigos que os 50 mais recentes)
+              .slice(2); // Pega todos os artefatos a partir do 3º (ou seja, os mais antigos que os 2 mais recentes)
 
             if (testArtifactsToDelete.length === 0) {
               console.log('Nenhum artefato de relatório antigo para deletar.');
